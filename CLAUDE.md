@@ -92,3 +92,46 @@ is the resume snapshot, with `checklist.md`'s first unchecked stage as fallback.
 The `epic-conformance` agent appends a `## Feature F-n — DONE` section (entities, decisions, failed
 approaches) to this file after each completed feature — keep those sections; they are cross-feature
 memory.
+
+## Feature F-1: Sign Up and Sign In — DONE
+
+Conformance: `artifacts/F-1/11-conformance-report.md` (CONFORMANT, 2026-10-29).
+
+### Entities Introduced
+- **User** (`users`): `id` (UUID, `gen_random_uuid()`), `email` (stored trimmed + lower-cased; UNIQUE
+  `users_email_key` + CHECK `email = lower(email)`), `passwordHash` (argon2id, never leaves Identity),
+  `createdAt`, `updatedAt`. **No `homeCurrency` yet** — F-10 adds the column, the field, and extends the guard.
+- **Session** (`sessions`, Identity-internal): `id` = 32 random bytes base64url (the `sid` cookie value,
+  stored raw), `userId` (FK cascade), `expiresAt` (30-day sliding, Postgres `now()`), `createdAt`.
+- **Sign-in Attempt** (`sign_in_attempts`, Identity-internal): `email`, `attemptedAt`; no key, no FK.
+
+### Key Decisions
+- Every route is protected by the global `SessionGuard` (`APP_GUARD`); mark public routes `@Public()`, read
+  the signed-in User with `@CurrentUser()` → `SignedInUser { userId }`. No module but Identity reads `users`;
+  F-4's two lookups (User by email, emails by ids) are not built yet — add them to Identity's service.
+- Request bodies must be `Content-Type: application/json` — anything else is **415** (login-CSRF hardening).
+  Every Web App write must set the header (`HttpAuthService.send` does; reuse that pattern).
+- 429 body = Nest default + `retryAt` (ISO-8601 UTC); the Web App renders the local time.
+- Global `ValidationPipe` (`createValidationPipe()`, whitelist, `stopAtFirstError`); DTO 400 `message` is a
+  `string[]`, other errors a `string`. Messages live in `*.messages.ts` constants.
+- Liquibase: new changesets in `db/changelog/F-n/`, included from `db.changelog-master.yaml`; seed data
+  `context: test` only; **production runs `--contexts=prod`** (an empty filter runs test seeds too).
+- Backend: NestJS 11 + Jest 30 + TypeScript 6 (stay on `@nestjs/*@^11`). Runtime/CI Node 24.22.1 LTS — keep
+  both Dockerfiles and `ci.yml` in step. Postgres on host port 15432 for dev/test.
+- Frontend: DI via `ServiceProvider`/`useServices()` (add services to `Services`), `useSession()`,
+  `RequireSignedIn` route nesting, `<PageHeading>`, `<ErrorAlert>`, `<TextField>`; design tokens only in
+  `frontend/src/styles/theme.css`. SPA and `/api/v1` are served from one origin (no CORS).
+- Add each feature's routes to `scripts/smoke-test.sh`; new backend env vars go in `docker-compose.yml`,
+  `backend/.env.example`, and `.env.example`.
+
+### Failed Approaches (Do Not Retry)
+- NestJS 12 under Jest: ESM-only packages need `--experimental-vm-modules`; transforming to CJS fails on
+  `import.meta`. Upgrading is a dedicated ESM + Vitest chore.
+- Node 22 base images: its npm 10 rejects the npm-12-written `backend/package-lock.json`.
+- `npm run db:*` inside an agent sandbox (Docker via npm is blocked) — run `docker compose …` directly.
+- Mock-mode E2E through `run-with-env.sh` runs sandboxed and Chromium dies — needs the sandbox off.
+
+### Blockers for Next Feature
+- None for F-2. Pending outside the code: `develop` branch missing on origin (dev merge skipped); PR
+  `feat/F-1` → `main` not opened (GitHub MCP down); `.claude/tech-stack-profile.md` should be regenerated.
+- Open question for the user (OQ-1): hash the session token at rest? (epic-level change to Session.)
