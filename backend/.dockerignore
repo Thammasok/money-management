@@ -1,0 +1,10 @@
+# Keep the build context small and keep local state and secrets out of every layer.
+node_modules
+dist
+coverage
+*.tsbuildinfo
+test
+.env
+.env.*
+Dockerfile
+.dockerignore

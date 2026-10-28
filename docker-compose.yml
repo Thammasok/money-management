@@ -1,0 +1,112 @@
+# Production-shaped stack: Postgres, the Liquibase migration (schema only — NO seed data), the NestJS API, and the
+# nginx edge that serves the Web App and proxies /api/ to the API, so the browser sees ONE origin.
+#
+#   cp .env.example .env                      # set POSTGRES_PASSWORD, the one required value
+#   docker compose up -d --build --wait
+#   bash scripts/smoke-test.sh http://localhost:8080
+#
+# Not for local development: use docker-compose.backing-service.yml there (seeded test database).
+#
+# TLS is NOT terminated here. In production put a TLS-terminating proxy or load balancer in front of `web`: the session
+# cookie is `Secure`, so a browser only keeps it over https. `web` is published on loopback by default so the plain-http
+# port is never reachable from the network by accident; set WEB_BIND=0.0.0.0 when the proxy runs on another machine.
+#
+# The project name differs from docker-compose.backing-service.yml (`money-management`) on purpose: the two stacks
+# must never share a volume or be torn down by each other.
+name: money-management-prod
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: "5"
+
+services:
+  postgres:
+    image: postgres:16.15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: money_management
+      POSTGRES_USER: money_management
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required - see .env.example}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U money_management -d money_management"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    logging: *logging
+
+  # One-shot: applies db/changelog, then exits 0 before the API starts. The context filter is `prod`, NOT empty:
+  # an empty Liquibase filter runs every changeset, including the `context: test` seed User with a known password.
+  # Changesets without a context (the schema) run under any filter.
+  migrations:
+    image: liquibase/liquibase:4.31
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      LIQUIBASE_ANALYTICS_ENABLED: "false"
+    volumes:
+      - ./db/changelog:/liquibase/changelog:ro
+    command: >
+      --url=jdbc:postgresql://postgres:5432/money_management
+      --username=money_management
+      --password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required - see .env.example}
+      --changelog-file=changelog/db.changelog-master.yaml
+      --contexts=${LIQUIBASE_CONTEXTS:-prod}
+      update
+    logging: *logging
+
+  backend:
+    build:
+      context: ./backend
+    image: money-management-backend:${APP_VERSION:-local}
+    restart: unless-stopped
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      # Nest's logger honours NO_COLOR: plain text in the log stream instead of ANSI colour codes.
+      NO_COLOR: "1"
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      DATABASE_URL: postgresql://money_management:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required - see .env.example}@postgres:5432/money_management
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    logging: *logging
+
+  web:
+    build:
+      context: ./frontend
+    image: money-management-web:${APP_VERSION:-local}
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      BACKEND_ORIGIN: http://backend:3000
+      TRUSTED_PROXY_CIDR: ${TRUSTED_PROXY_CIDR:-127.0.0.1/32}
+    ports:
+      - "${WEB_BIND:-127.0.0.1}:${WEB_PORT:-8080}:8080"
+    read_only: true
+    tmpfs:
+      - /tmp
+      # nginx renders its config here at start-up (see frontend/Dockerfile); uid 101 is the unprivileged nginx user.
+      - /etc/nginx/conf.d:uid=101,gid=101
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    logging: *logging
+
+volumes:
+  db-data:

@@ -8,3 +8,7 @@ mb.log
 dist/
 coverage/
 *.tsbuildinfo
+# local environment files hold real secrets (docker-compose.yml reads .env); only the *.example templates are tracked
+.env
+.env.*
+!.env.example

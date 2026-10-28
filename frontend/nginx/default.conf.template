@@ -1,0 +1,100 @@
+# Edge for the Money Management Web App. The nginx image renders this file with envsubst at start-up into
+# /etc/nginx/conf.d/default.conf. envsubst fills in BACKEND_ORIGIN, TRUSTED_PROXY_CIDR and NGINX_LOCAL_RESOLVERS (see
+# frontend/Dockerfile); every other $name below is an nginx variable and passes through untouched.
+#
+# One origin serves the SPA and /api/v1: the backend enables no CORS and its httpOnly `sid` cookie must stay
+# same-origin. TLS is terminated in front of this container (the cookie is `Secure` in production).
+
+# The request path as the client sent it, without the query string. ($uri would read /index.html for every client-side
+# route after the SPA fallback below, and $request_uri would put query strings into the logs.)
+map $request_uri $log_path {
+    "~^(?<only_path>[^?]*)" $only_path;
+    default                 $request_uri;
+}
+
+# One JSON object per request on stdout: no cookies, no request bodies, no query strings.
+log_format json escape=json
+    '{"time":"$time_iso8601","remote_addr":"$remote_addr","method":"$request_method","path":"$log_path",'
+    '"status":$status,"bytes_sent":$body_bytes_sent,"request_time":$request_time,'
+    '"upstream_response_time":"$upstream_response_time","user_agent":"$http_user_agent"}';
+
+# Sign-up and sign-in each cost an argon2id hash (about 25 ms of CPU and 19 MB) and the backend only throttles per
+# email, so the edge limits per client address: 30 a minute, bursts of 10, on those two routes only. A request whose key
+# is empty is never counted, so every other request skips the limiter. The pattern allows a trailing slash because
+# Express routes /api/v1/sessions/ to the same handler; other letter cases never reach the backend at all (the /api/
+# location below is case-sensitive and sends them to the SPA, which answers 405 to a POST).
+map "$request_method $uri" $auth_write_key {
+    default                                "";
+    "~^POST /api/v1/(users|sessions)/?$"   $binary_remote_addr;
+}
+limit_req_zone $auth_write_key zone=auth_writes:10m rate=30r/m;
+limit_req_status 429;
+
+server {
+    listen 8080;
+    server_name _;
+    server_tokens off;
+    root /usr/share/nginx/html;
+
+    access_log /dev/stdout json;
+
+    # The real client address, taken from X-Forwarded-For only when the connection comes from the trusted proxy.
+    # Without this every client would share the load balancer's address, and with it one rate-limit bucket.
+    set_real_ip_from ${TRUSTED_PROXY_CIDR};
+    real_ip_header X-Forwarded-For;
+    real_ip_recursive on;
+
+    # Container probe: answered here, without touching the SPA files or the backend.
+    location = /healthz {
+        access_log off;
+        default_type text/plain;
+        return 200 "ok\n";
+    }
+
+    # The API, on the same origin as the SPA. The headers on these responses are the backend's own. The backend is
+    # re-resolved at request time (variable in proxy_pass), so recreating its container needs no nginx restart.
+    location /api/ {
+        limit_req zone=auth_writes burst=10 nodelay;
+        error_page 429 = @rate_limited;
+
+        client_max_body_size 100k;
+
+        resolver ${NGINX_LOCAL_RESOLVERS} valid=10s;
+        set $backend ${BACKEND_ORIGIN};
+        proxy_pass $backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_connect_timeout 5s;
+        proxy_read_timeout 30s;
+    }
+
+    # What the edge's own 429 looks like: the backend's error shape, so the Web App shows `message` as sent. (A 429
+    # from the backend itself — the per-email pause, with its `retryAt` — passes through untouched.)
+    location @rate_limited {
+        default_type application/json;
+        add_header Retry-After 60 always;
+        add_header Cache-Control "no-store" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        return 429 '{"statusCode":429,"message":"Too many requests. Wait a minute and try again.","error":"Too Many Requests"}';
+    }
+
+    # Fingerprinted build output (Vite names each file after its content): cache for a year. A missing file is a 404,
+    # never index.html, so a stale tab asking for a deleted bundle fails visibly instead of parsing HTML as JavaScript.
+    location /assets/ {
+        include /etc/nginx/snippets/security-headers.conf;
+        expires 1y;
+        gzip on;
+        gzip_vary on;
+        gzip_min_length 1024;
+        gzip_types text/css text/javascript application/javascript image/svg+xml;
+        try_files $uri =404;
+    }
+
+    # Everything else is the single-page app: an unknown path falls back to index.html (client-side routes such as
+    # /sign-in), revalidated on every load so a new release is picked up at once.
+    location / {
+        include /etc/nginx/snippets/security-headers.conf;
+        expires -1;
+        try_files $uri /index.html;
+    }
+}

@@ -1,0 +1,162 @@
+# CI for Money Management: fast gates first, then the two slow proofs in parallel.
+#
+#   backend ──┐                    ┌─ integration  real Postgres + Liquibase (test context): backend integration tests,
+#   frontend ─┴─ (both must pass) ─┤                the Bruno API suite, the Playwright E2E suite
+#                                  └─ images       build both images, run the production stack, smoke-test it
+#
+# Runs on every pull request and on pushes to the two long-lived branches (.claude/rules/git-flow.md). There is no
+# deploy job: no host, cluster or registry is defined yet (artifacts/F-1/10-deployment-report.md, hand-offs H-1 and
+# H-2); the prod deploy is a human-cut vX.Y.Z tag handled by the infra pipeline.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, develop]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # The exact Node the Dockerfiles use, so CI and the images agree. Node 24 is the LTS line whose npm (11) accepts the
+  # committed lockfiles; the npm 10 bundled with Node 22 rejects backend/package-lock.json.
+  NODE_VERSION: "24.22.1"
+
+jobs:
+  backend:
+    name: Backend - lint, types, unit tests, audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm --prefix backend ci
+      - run: npm --prefix backend run lint
+      - run: npm --prefix backend run format:check
+      - run: npm --prefix backend run typecheck
+      - run: npm --prefix backend test
+      # Production dependencies only: what the image ships. The dev-tool advisories without a fix never leave CI.
+      - run: npm --prefix backend audit --omit=dev --audit-level=high
+
+  frontend:
+    name: Frontend - lint, types, unit tests, build, audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm --prefix frontend ci
+      - run: npm --prefix frontend run lint
+      - run: npm --prefix frontend run format:check
+      - run: npm --prefix frontend run typecheck
+      - run: npm --prefix frontend test
+      - run: npm --prefix frontend run build
+      - run: npm --prefix frontend audit --omit=dev --audit-level=high
+
+  integration:
+    name: Integration - Postgres, API suites, E2E
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            backend/package-lock.json
+            frontend/package-lock.json
+      # Repo root = the acceptance tooling (Playwright, Bruno CLI, Mountebank); the apps keep their own manifests.
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm --prefix backend ci
+          npm --prefix frontend ci
+      - name: Install the Playwright browser
+        run: npx playwright install --with-deps chromium
+      # Postgres 16 on host port 15432 with the Liquibase changelog applied, `test` context (seed User included).
+      - name: Start Postgres and apply the changelog
+        run: docker compose -f docker-compose.backing-service.yml up -d --wait
+      - name: Backend integration tests
+        run: npm --prefix backend run test:int
+      - name: Start the API
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:15432/money_management_test
+        run: |
+          npm --prefix backend run build
+          node backend/dist/main.js > api.log 2>&1 &
+          echo $! > api.pid
+          for _ in $(seq 1 30); do
+            if [ "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/api/v1/me)" = "401" ]; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "The API did not become ready" >&2
+          cat api.log >&2
+          exit 1
+      - name: API acceptance suite (Bruno)
+        run: npm run api:test:integration
+      - name: Stop the API
+        if: always()
+        run: kill "$(cat api.pid)" || true
+      # Playwright starts the Vite dev server and builds and starts the API itself (playwright.config.ts); the
+      # database it needs is already up. CI=true gives it two retries and forbids test.only.
+      - name: E2E (Playwright)
+        run: npx playwright test --reporter=list,html
+      - name: Upload the Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+      - name: Service logs
+        if: failure()
+        run: |
+          docker compose -f docker-compose.backing-service.yml logs --no-color
+          cat api.log || true
+      - name: Tear down
+        if: always()
+        run: docker compose -f docker-compose.backing-service.yml down -v
+
+  images:
+    name: Images - build, run the production stack, smoke test
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      # A throwaway password for an ephemeral runner; the real one comes from the deployment's secret store.
+      - name: Generate a throwaway database password
+        run: echo "POSTGRES_PASSWORD=$(openssl rand -hex 24)" >> "$GITHUB_ENV"
+      - name: Validate docker-compose.yml
+        run: docker compose config --quiet
+      # Builds backend/Dockerfile and frontend/Dockerfile, then starts postgres -> migrations (context prod, schema
+      # only) -> backend -> web and waits for every health check. Production settings: NODE_ENV=production, Secure cookie.
+      - name: Build the images and start the production stack
+        run: docker compose up -d --build --wait
+      - name: Smoke test
+        run: bash scripts/smoke-test.sh http://localhost:8080
+      - name: Service logs
+        if: failure()
+        run: docker compose logs --no-color
+      - name: Tear down
+        if: always()
+        run: docker compose down -v

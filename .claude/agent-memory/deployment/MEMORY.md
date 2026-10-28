@@ -1,0 +1,4 @@
+- [Liquibase empty context runs everything](liquibase-empty-context-runs-everything.md) — harness says prod = no contexts; that ships the seed User. Use --contexts=prod
+- [Node/npm lockfile LTS pin](node-npm-lockfile-lts-pin.md) — lockfiles by npm 12; Node 22's npm 10 rejects backend lock; pin Node 24 LTS; how to test
+- [Agent sandbox validation recipes](agent-sandbox-validation-recipes.md) — compose --env-file, curl globbing loops, mktemp quirk, actionlint, screenshot CSP check
+- [nginx edge and compose gotchas](nginx-edge-and-compose-gotchas.md) — envsubst, add_header inheritance, runtime DNS, read-only rootfs, limit_req key map
