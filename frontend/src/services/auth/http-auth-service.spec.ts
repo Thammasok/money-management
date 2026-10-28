@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ApiError } from './api-error';
+import { ApiError } from '../http/api-error';
 import { HttpAuthService } from './http-auth-service';
 
 // Boundary under test: HttpAuthService (the only code that talks to /api/v1). The one thing mocked is `fetch`.

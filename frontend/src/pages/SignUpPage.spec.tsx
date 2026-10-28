@@ -2,9 +2,9 @@ import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { App } from '../App';
-import { ApiError } from '../services/auth/api-error';
 import type { User } from '../services/auth/auth.types';
-import { GENERIC_FAILURE_TEXT } from '../services/auth/auth-messages';
+import { ApiError } from '../services/http/api-error';
+import { GENERIC_FAILURE_TEXT } from '../services/http/failure-messages';
 import { createMockServices, deferred, renderWithProviders } from '../test-utils';
 
 // Boundary under test: the Sign Up screen as a Visitor meets it — the typed values go to AuthService.signUp, and what
@@ -87,22 +87,29 @@ describe('Sign Up screen', () => {
     expect(await screen.findByTestId('sign-up-error')).toHaveTextContent(GENERIC_FAILURE_TEXT);
   });
 
-  it('disables the submit button while the request is in flight and enables it again after a refusal', async () => {
+  it('disables the submit button while the request is in flight', async () => {
     // Arrange
     const { services, user } = await openSignUp();
-    const answer = deferred<User>();
-    services.authService.signUp.mockReturnValue(answer.promise);
+    services.authService.signUp.mockReturnValue(deferred<User>().promise);
 
     // Act
     await submit(user, 'new@example.test', 'Sunny-Day-42');
 
-    // Assert — in flight
+    // Assert
     expect(screen.getByTestId('sign-up-submit')).toBeDisabled();
+  });
+
+  it('enables the submit button again after a refusal', async () => {
+    // Arrange
+    const { services, user } = await openSignUp();
+    services.authService.signUp.mockRejectedValue(
+      new ApiError(409, ['This email is already registered.']),
+    );
 
     // Act
-    answer.reject(new ApiError(409, ['This email is already registered.']));
+    await submit(user, 'new@example.test', 'Sunny-Day-42');
 
-    // Assert — settled
+    // Assert
     await screen.findByTestId('sign-up-error');
     expect(screen.getByTestId('sign-up-submit')).toBeEnabled();
   });

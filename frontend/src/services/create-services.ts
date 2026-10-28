@@ -1,5 +1,6 @@
 import { HttpAuthService } from './auth/http-auth-service';
 import type { Services } from './services';
+import { HttpWalletService } from './wallets/http-wallet-service';
 
 /**
  * The production services. `fetch` is wrapped rather than handed over bare: a browser's `fetch` called as a method
@@ -7,5 +8,8 @@ import type { Services } from './services';
  */
 export function createServices(): Services {
   const fetchFn: typeof fetch = (input, init) => fetch(input, init);
-  return { authService: new HttpAuthService(fetchFn) };
+  return {
+    authService: new HttpAuthService(fetchFn),
+    walletService: new HttpWalletService(fetchFn),
+  };
 }

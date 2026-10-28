@@ -1,3 +1,3 @@
 - [E2E mock mode & sandbox](e2e-mock-mode-sandbox.md) — mock run needs `run-with-env.sh E2E_MODE=mock -- …` + `dangerouslyDisableSandbox`; Playwright/Chrome-DevTools MCP browsers don't work (no Google Chrome); use `npx playwright screenshot`
-- [Self-provisioning integration E2E](e2e-integration-self-provisioning.md) — global-setup + backend webServer make `run-e2e.sh F-1 list` work cold, so the Stop-time e2e-gate passes after teardown
-- [Frontend stack & design tokens](frontend-stack-and-design.md) — pinned majors, test setup, the one tokens file (`theme.css`), daisyUI/React pitfalls, stale dev-server trap, visual-review recipe
+- [Self-provisioning integration E2E](e2e-integration-self-provisioning.md) — global-setup + backend webServer make `run-e2e.sh F-n list` work cold; `up --wait` does NOT wait for the Liquibase one-shot (race, fixed) — run migrations explicitly
+- [Frontend stack & design tokens](frontend-stack-and-design.md) — pinned majors, code layout, test pitfalls (NBSP, fake Date), the one tokens file (`theme.css`), daisyUI/React pitfalls, stale dev-server trap, screenshot-based visual review recipe

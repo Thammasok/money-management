@@ -2,8 +2,8 @@ import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { App } from '../App';
-import { ApiError } from '../services/auth/api-error';
-import { GENERIC_FAILURE_TEXT } from '../services/auth/auth-messages';
+import { ApiError } from '../services/http/api-error';
+import { GENERIC_FAILURE_TEXT } from '../services/http/failure-messages';
 import { createMockServices, deferred, renderWithProviders } from '../test-utils';
 
 // Boundary under test: Home as a signed-in User meets it — who they are, and Sign out. AuthService is the only thing mocked.

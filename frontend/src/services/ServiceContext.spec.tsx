@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { IAuthService } from './auth/auth.types';
 import { ServiceProvider, useServices } from './ServiceContext';
 import type { Services } from './services';
+import type { IWalletService } from './wallets/wallet.types';
 
 // Boundary under test: ServiceProvider / useServices — how a screen gets the services it was given.
 
@@ -13,7 +14,14 @@ function aServices(): Services {
     signIn: vi.fn(),
     signOut: vi.fn(),
   };
-  return { authService };
+  const walletService: IWalletService = {
+    listCurrencies: vi.fn(),
+    listWallets: vi.fn(),
+    createWallet: vi.fn(),
+    getWallet: vi.fn(),
+    recordTransaction: vi.fn(),
+  };
+  return { authService, walletService };
 }
 
 function WhichServices({ expected }: { expected: Services }) {

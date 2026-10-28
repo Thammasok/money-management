@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { PASSWORD_RULE_TEXT } from '../services/auth/auth-messages';
 import type { SignUpFormProps } from './component-props';
-import { ErrorAlert } from './ErrorAlert';
+import { ErrorList } from './ErrorList';
 import { TextField } from './TextField';
 
 const PASSWORD_RULE_HINT = { id: 'sign-up-password-rule', text: PASSWORD_RULE_TEXT };
@@ -38,16 +38,7 @@ export function SignUpForm({ onSubmit, isSubmitting, errors }: SignUpFormProps) 
         onChange={setPassword}
         hint={PASSWORD_RULE_HINT}
       />
-      {errors.length > 0 ? (
-        <ErrorAlert
-          id="sign-up-error"
-          className="alert-vertical justify-items-start gap-2 text-start"
-        >
-          {errors.map((message) => (
-            <p key={message}>{message}</p>
-          ))}
-        </ErrorAlert>
-      ) : null}
+      <ErrorList id="sign-up-error" messages={errors} />
       <button
         id="sign-up-submit"
         type="submit"

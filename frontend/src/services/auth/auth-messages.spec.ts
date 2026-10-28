@@ -1,11 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { ApiError } from './api-error';
-import {
-  GENERIC_FAILURE_TEXT,
-  describeSignInFailure,
-  describeSignUpFailure,
-  type TimeFormatter,
-} from './auth-messages';
+import { ApiError } from '../http/api-error';
+import { GENERIC_FAILURE_TEXT } from '../http/failure-messages';
+import { describeSignInFailure, describeSignUpFailure, type TimeFormatter } from './auth-messages';
 
 // Boundary under test: the two presenter functions that turn a failed call into the text the person reads.
 

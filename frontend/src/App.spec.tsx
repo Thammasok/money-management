@@ -82,7 +82,58 @@ describe('App routing', () => {
     expect(await screen.findByTestId('sign-in-page')).toBeInTheDocument();
   });
 
-  it('links Sign In and Sign Up to each other', async () => {
+  it.each(['/wallets/new', '/wallets/6c1f0a52-0b64-4d8e-9a53-5b0f6a2a7c11'])(
+    'sends a Visitor who is not signed in from %s to Sign In',
+    async (route) => {
+      // Arrange & Act
+      renderWithProviders(<App />, { route });
+
+      // Assert
+      expect(await screen.findByTestId('sign-in-page')).toBeInTheDocument();
+    },
+  );
+
+  it('opens Create Wallet at /wallets/new — a static segment, never mistaken for a Wallet id', async () => {
+    // Arrange
+    const services = servicesSignedInAs(USER);
+
+    // Act
+    renderWithProviders(<App />, { services, route: '/wallets/new' });
+
+    // Assert
+    expect(await screen.findByTestId('create-wallet-page')).toBeInTheDocument();
+    expect(services.walletService.getWallet).not.toHaveBeenCalled();
+  });
+
+  it('opens a Wallet at /wallets/:walletId for a signed-in User', async () => {
+    // Arrange
+    const services = servicesSignedInAs(USER);
+    services.walletService.getWallet.mockResolvedValue({
+      id: '6c1f0a52-0b64-4d8e-9a53-5b0f6a2a7c11',
+      name: 'Cash',
+      currency: 'THB',
+      openingBalanceMinor: '0',
+      balanceMinor: '0',
+      createdAt: '2026-10-29T03:00:00.000Z',
+      updatedAt: '2026-10-29T03:00:00.000Z',
+      transactions: [],
+    });
+    services.walletService.listCurrencies.mockResolvedValue([
+      { code: 'THB', name: 'Thai Baht', minorDigits: 2 },
+    ]);
+
+    // Act
+    renderWithProviders(<App />, {
+      services,
+      route: '/wallets/6c1f0a52-0b64-4d8e-9a53-5b0f6a2a7c11',
+    });
+
+    // Assert
+    expect(await screen.findByTestId('wallet-page')).toBeInTheDocument();
+    expect(await screen.findByTestId('wallet-name-heading')).toHaveTextContent('Cash');
+  });
+
+  it('links Sign In to Sign Up', async () => {
     // Arrange
     const user = userEvent.setup();
     renderWithProviders(<App />, { route: '/sign-in' });
@@ -93,6 +144,13 @@ describe('App routing', () => {
 
     // Assert
     expect(await screen.findByTestId('sign-up-page')).toBeInTheDocument();
+  });
+
+  it('links Sign Up to Sign In', async () => {
+    // Arrange
+    const user = userEvent.setup();
+    renderWithProviders(<App />, { route: '/sign-up' });
+    await screen.findByTestId('sign-up-page');
 
     // Act
     await user.click(screen.getByTestId('go-to-sign-in-link'));

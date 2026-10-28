@@ -24,7 +24,12 @@ export default async function globalSetup(): Promise<(() => Promise<void>) | und
   if (process.env.E2E_MODE === 'mock') return undefined;
 
   const wasRunning = compose('ps', '--status', 'running', '-q', 'postgres').trim() !== '';
-  compose('up', '-d', '--wait');
+  compose('up', '-d', '--wait', 'postgres');
+  // Liquibase is a one-shot with no healthcheck, so `up --wait` counts it as ready while it is still applying the
+  // changelog (measured on a cold start: `up` returned 0.3 s before it finished, and the first spec's sign-up met an
+  // empty schema — 500 `relation "users" does not exist`). `run` blocks until it exits, so every spec sees the schema.
+  // Same invocation as `npm run db:reset`; idempotent when the changelog is already applied.
+  compose('run', '--rm', '-T', 'migrations');
   if (wasRunning) return undefined;
 
   return async () => {

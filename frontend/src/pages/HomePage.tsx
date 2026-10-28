@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { HomeView } from '../components/HomeView';
 import { PageHeading } from '../components/PageHeading';
-import { GENERIC_FAILURE_TEXT } from '../services/auth/auth-messages';
+import { GENERIC_FAILURE_TEXT } from '../services/http/failure-messages';
 import { useServices } from '../services/ServiceContext';
 import { useSession } from '../session/SessionProvider';
+import { HomeWalletList } from './HomeWalletList';
 
 /**
  * Container: shows the signed-in User and wires Sign out to `AuthService.signOut`. When signing out works the Session
@@ -34,12 +35,15 @@ export function HomePage() {
   return (
     <main id="home-page">
       <PageHeading>Home</PageHeading>
-      <HomeView
-        email={session.user.email}
-        onSignOut={handleSignOut}
-        isSigningOut={isSigningOut}
-        error={error}
-      />
+      <HomeWalletList />
+      <section className="flex flex-col gap-4 border-t border-base-300 pt-6">
+        <HomeView
+          email={session.user.email}
+          onSignOut={handleSignOut}
+          isSigningOut={isSigningOut}
+          error={error}
+        />
+      </section>
     </main>
   );
 }

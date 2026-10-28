@@ -25,4 +25,22 @@ describe('createServices', () => {
       expect.objectContaining({ method: 'GET' }),
     );
   });
+
+  it('wires a wallet service that talks to /api/v1 through the global fetch', async () => {
+    // Arrange
+    const globalFetch = vi.fn<typeof fetch>(() =>
+      Promise.resolve(new Response(JSON.stringify({ wallets: [] }), { status: 200 })),
+    );
+    vi.stubGlobal('fetch', globalFetch);
+
+    // Act
+    const wallets = await createServices().walletService.listWallets();
+
+    // Assert
+    expect(wallets).toEqual([]);
+    expect(globalFetch).toHaveBeenCalledWith(
+      '/api/v1/wallets',
+      expect.objectContaining({ method: 'GET' }),
+    );
+  });
 });

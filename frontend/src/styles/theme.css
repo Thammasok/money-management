@@ -1,7 +1,7 @@
 /*
  * Design tokens — the "household ledger" look: warm paper and ink, a bookkeeping green, a serif heading face over a
  * humanist sans for UI and figures, and the accountant's double rule as the one signature detail.
- * Direction chosen with ui-ux-pro-max (style / palette / type), vetted with frontend-design (deliberate, not the
+ * Look chosen with ui-ux-pro-max (style / palette / typography), vetted with frontend-design (deliberate, not the
  * stock navy-and-blue fintech look), audited with web-design-guidelines.
  *
  * Three layers — components only ever use the semantic names (bg-base-100, text-base-content, btn-primary, …):
@@ -158,13 +158,28 @@
     @apply mx-4 my-8 flex flex-col gap-6 rounded-box border border-base-300 bg-base-100 p-6 shadow-xs motion-safe:animate-sheet-in sm:mx-auto sm:my-20 sm:max-w-md sm:p-8;
   }
 
-  /* The signature: a double rule under the title, like the underline an accountant draws under a final figure. */
+  /* The signature: a double rule under the title, like the underline an accountant draws under a final figure.
+     A title may be a name the person typed (a Wallet), so an unbroken one wraps instead of leaving the screen. */
   h1 {
-    @apply border-b-4 border-double border-base-content/55 pb-3 font-display text-3xl font-medium tracking-tight text-balance;
+    @apply border-b-4 border-double border-base-content/55 pb-3 font-display text-3xl font-medium tracking-tight text-balance wrap-anywhere;
   }
 
   /* The title takes focus when a screen arrives (so it is announced), but it is not a control: no ring around it. */
   h1:focus {
     @apply outline-none;
+  }
+
+  /* Section titles inside a screen: a hairline, so the title's double rule stays the one signature. */
+  h2 {
+    @apply border-b border-base-300 pb-2 font-display text-xl font-medium tracking-tight text-balance;
+  }
+
+  /* Anything tappable acts on the first tap: no double-tap-to-zoom delay. */
+  a,
+  button,
+  input,
+  select,
+  label {
+    @apply touch-manipulation;
   }
 }

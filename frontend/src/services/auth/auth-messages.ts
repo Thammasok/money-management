@@ -1,4 +1,5 @@
-import { ApiError } from './api-error';
+import { ApiError } from '../http/api-error';
+import { GENERIC_FAILURE_TEXT } from '../http/failure-messages';
 
 // Everything the person reads about signing up and in. The Web App holds no auth rules: for a 400, 401 and 409 it
 // shows the backend's own sentence (artifacts/F-1/02-flow.md → Error message catalogue); only what the backend
@@ -7,9 +8,6 @@ import { ApiError } from './api-error';
 /** Shown under the password field on Sign Up at all times (same sentence the backend answers a 400 with). */
 export const PASSWORD_RULE_TEXT =
   'Password must be at least 8 characters and include a letter, a number, and a symbol.';
-
-/** Network failure, backend down, or any answer that carries no message the person could act on. */
-export const GENERIC_FAILURE_TEXT = 'Something went wrong. Please try again.';
 
 const PAUSED_PREFIX = 'Too many failed sign-ins. Try again at';
 

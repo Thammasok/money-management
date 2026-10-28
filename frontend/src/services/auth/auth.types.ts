@@ -8,17 +8,6 @@ export interface User {
 }
 
 /**
- * Body of every non-2xx answer: Nest's default `{ statusCode, message, error }`. `message` is a `string[]` for DTO
- * validation (400, one line per broken rule) and a `string` otherwise; a 429 adds `retryAt` (ISO-8601 UTC).
- */
-export interface ApiErrorBody {
-  statusCode: number;
-  message: string | string[];
-  error: string;
-  retryAt?: string;
-}
-
-/**
  * Everything the screens need from Identity. The only implementation that talks to the network is
  * `HttpAuthService`; tests inject a mock. The Web App holds no auth rules — it shows what the backend says.
  *

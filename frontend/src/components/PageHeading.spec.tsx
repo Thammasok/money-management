@@ -18,6 +18,16 @@ describe('PageHeading', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Sign in' })).toBeInTheDocument();
   });
 
+  it('carries the id it is given, for a screen whose title is part of the Playwright contract', () => {
+    // Arrange & Act
+    render(<PageHeading id="wallet-name-heading">Cash</PageHeading>);
+
+    // Assert
+    expect(screen.getByTestId('wallet-name-heading')).toBe(
+      screen.getByRole('heading', { level: 1, name: 'Cash' }),
+    );
+  });
+
   it('puts the title in the document title, behind the app name', () => {
     // Arrange & Act
     render(<PageHeading>Sign in</PageHeading>);

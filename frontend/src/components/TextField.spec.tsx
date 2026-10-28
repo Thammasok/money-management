@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { createRef } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import type { TextFieldProps } from './component-props';
 import { TextField } from './TextField';
@@ -69,5 +70,57 @@ describe('TextField', () => {
     // Assert
     expect(screen.getByTestId('demo-hint')).toHaveTextContent('Use your work address.');
     expect(screen.getByTestId('demo-email')).toHaveAccessibleDescription('Use your work address.');
+  });
+
+  it.each(['text', 'date'] as const)('renders a %s input too', (type) => {
+    // Arrange & Act
+    renderField({ type });
+
+    // Assert
+    expect(screen.getByTestId('demo-email')).toHaveAttribute('type', type);
+  });
+
+  it('names the input after its type unless it is given a name', () => {
+    // Arrange & Act
+    renderField({ type: 'password' });
+
+    // Assert
+    expect(screen.getByTestId('demo-email')).toHaveAttribute('name', 'password');
+  });
+
+  it('uses the name it is given', () => {
+    // Arrange & Act
+    renderField({ type: 'text', name: 'openingBalance' });
+
+    // Assert
+    expect(screen.getByTestId('demo-email')).toHaveAttribute('name', 'openingBalance');
+  });
+
+  it('offers a decimal keyboard for a number typed as text', () => {
+    // Arrange & Act
+    renderField({ type: 'text', inputMode: 'decimal' });
+
+    // Assert
+    expect(screen.getByTestId('demo-email')).toHaveAttribute('inputmode', 'decimal');
+  });
+
+  it('limits a date field to the latest date it is given', () => {
+    // Arrange & Act
+    renderField({ type: 'date', max: '2026-10-29' });
+
+    // Assert
+    expect(screen.getByTestId('demo-email')).toHaveAttribute('max', '2026-10-29');
+  });
+
+  it('lets its owner move focus into the input', () => {
+    // Arrange
+    const ref = createRef<HTMLInputElement>();
+    renderField({ ref });
+
+    // Act
+    ref.current?.focus();
+
+    // Assert
+    expect(screen.getByTestId('demo-email')).toHaveFocus();
   });
 });

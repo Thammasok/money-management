@@ -1,6 +1,6 @@
 import type { TextFieldProps } from './component-props';
 
-/** Humble: a label over an input, with optional help text under it. Both forms are built from this. */
+/** Humble: a label over an input, with optional help text under it. Every form is built from this. */
 export function TextField({
   id,
   label,
@@ -9,6 +9,10 @@ export function TextField({
   value,
   onChange,
   hint,
+  name = type,
+  inputMode,
+  max,
+  ref,
 }: TextFieldProps) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -16,11 +20,14 @@ export function TextField({
         {label}
       </label>
       <input
+        ref={ref}
         id={id}
-        name={type}
+        name={name}
         type={type}
         autoComplete={autoComplete}
+        inputMode={inputMode}
         spellCheck={false}
+        max={max}
         aria-describedby={hint?.id}
         value={value}
         onChange={(event) => onChange(event.target.value)}

@@ -7,7 +7,7 @@ export function HomeView({ email, onSignOut, isSigningOut, error }: HomeViewProp
     <>
       <p className="text-lg">
         Signed in as{' '}
-        <span id="signed-in-email" className="font-semibold break-all">
+        <span id="signed-in-email" className="font-semibold wrap-anywhere">
           {email}
         </span>
       </p>

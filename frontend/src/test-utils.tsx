@@ -5,13 +5,18 @@ import { vi, type Mocked } from 'vitest';
 import type { IAuthService } from './services/auth/auth.types';
 import { ServiceProvider } from './services/ServiceContext';
 import type { Services } from './services/services';
+import type { IWalletService } from './services/wallets/wallet.types';
 import { SessionProvider } from './session/SessionProvider';
 
 export interface MockServices extends Services {
   authService: Mocked<IAuthService>;
+  walletService: Mocked<IWalletService>;
 }
 
-/** Mock services for a test: nobody is signed in and signing out works, until the test says otherwise. */
+/**
+ * Mock services for a test: nobody is signed in, signing out works, and there are no Currencies and no Wallets, until
+ * the test says otherwise. The Wallet calls that create or read one Wallet have no answer until a test gives one.
+ */
 export function createMockServices(): MockServices {
   return {
     authService: {
@@ -19,6 +24,13 @@ export function createMockServices(): MockServices {
       signUp: vi.fn<IAuthService['signUp']>(),
       signIn: vi.fn<IAuthService['signIn']>(),
       signOut: vi.fn<IAuthService['signOut']>().mockResolvedValue(undefined),
+    },
+    walletService: {
+      listCurrencies: vi.fn<IWalletService['listCurrencies']>().mockResolvedValue([]),
+      listWallets: vi.fn<IWalletService['listWallets']>().mockResolvedValue([]),
+      createWallet: vi.fn<IWalletService['createWallet']>(),
+      getWallet: vi.fn<IWalletService['getWallet']>(),
+      recordTransaction: vi.fn<IWalletService['recordTransaction']>(),
     },
   };
 }
