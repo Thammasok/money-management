@@ -1,0 +1,68 @@
+{
+  "network": {
+    "allowedDomains": [
+      "api.anthropic.com",
+      "registry.npmjs.org",
+      "*.npmjs.org",
+      "pypi.org",
+      "files.pythonhosted.org",
+      "github.com",
+      "*.github.com",
+      "api.github.com",
+      "codeload.github.com",
+      "objects.githubusercontent.com",
+      "raw.githubusercontent.com",
+      "localhost",
+      "127.0.0.1",
+      "host.docker.internal",
+      "*.datadoghq.com",
+      "hooks.slack.com",
+      "crates.io",
+      "*.crates.io",
+      "outline.myorder.internal"
+    ],
+    "deniedDomains": [],
+    "allowLocalBinding": true
+  },
+  "filesystem": {
+    "denyRead": [
+      "~/.aws",
+      "~/.ssh",
+      "~/.config/gcloud",
+      "~/.kube",
+      "~/.netrc",
+      "~/.git-credentials",
+      "**/.env",
+      "**/.env.local",
+      "**/.env.*.local",
+      "**/.env.development",
+      "**/.env.dev",
+      "**/.env.production",
+      "**/.env.prod",
+      "**/.env.staging",
+      "**/.env.test",
+      "**/.claude/settings.local.json",
+      "./.claude/settings.local.json",
+      "**/*.key",
+      "**/*.pem"
+    ],
+    "allowWrite": [".", "/tmp", "~/.claude", "~/.cursor"],
+    "denyWrite": [
+      "**/.env",
+      "**/.env.local",
+      "**/.env.*.local",
+      "**/.env.development",
+      "**/.env.dev",
+      "**/.env.production",
+      "**/.env.prod",
+      "**/.env.staging",
+      "**/.env.test",
+      "**/*.key",
+      "**/*.pem",
+      "**/.claude/settings.json",
+      "./.claude/settings.json",
+      "**/.claude/settings.local.json",
+      "./.claude/settings.local.json"
+    ]
+  }
+}

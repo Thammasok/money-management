@@ -1,0 +1,329 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "enabledPlugins": {},
+  "permissions": {
+    "defaultMode": "auto",
+    "allow": [
+      "Bash(bash .claude/scripts/run-e2e.sh*)",
+      "Bash(bash .claude/scripts/run-eval.sh*)",
+      "Bash(bash .claude/scripts/langfuse-up.sh*)",
+      "Bash(bash .claude/scripts/run-with-env.sh*)",
+      "Bash(docker compose *)",
+      "Bash(docker-compose *)",
+      "Bash(docker ps*)",
+      "Bash(docker start *)",
+      "Bash(docker logs *)",
+      "Bash(npm *)",
+      "Bash(npx *)",
+      "Edit",
+      "Write",
+      "MultiEdit",
+      "Agent",
+      "Skill",
+      "mcp__github",
+      "mcp__gke",
+      "mcp__playwright",
+      "mcp__chrome-devtools"
+    ],
+    "deny": [
+      "Edit(.claude/settings.json)",
+      "Edit(.claude/settings.local.json)",
+      "Write(.claude/settings.json)",
+      "Write(.claude/settings.local.json)",
+      "Edit(~/.claude/settings.json)",
+      "Edit(~/.claude/settings.local.json)",
+      "Write(~/.claude/settings.json)",
+      "Write(~/.claude/settings.local.json)",
+      "Read(.claude/settings.local.json)",
+      "Read(./.claude/settings.local.json)",
+      "Read(**/.env)",
+      "Read(**/.env.!(example|sample|template))",
+      "Edit(**/.env)",
+      "Edit(**/.env.!(example|sample|template))",
+      "Write(**/.env)",
+      "Write(**/.env.!(example|sample|template))",
+      "Edit(**/*.key)",
+      "Write(**/*.key)",
+      "Edit(**/*.pem)",
+      "Write(**/*.pem)",
+      "Edit(.git/**)",
+      "Write(.git/**)",
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git push -f *)",
+      "Bash(git push --delete*)",
+      "Bash(git push * main*)",
+      "Bash(git push origin main*)",
+      "Bash(git push * master*)",
+      "Bash(git push origin master*)",
+      "Bash(git push --mirror*)",
+      "Bash(git checkout -- *)",
+      "Bash(git restore *)",
+      "Bash(git reset --hard *)",
+      "Bash(git clean*)",
+      "Bash(git config --global*)",
+      "Bash(git filter-branch*)",
+      "Bash(git remote set-url*)",
+      "Bash(git remote add*)",
+      "Bash(find * -exec*)",
+      "Bash(find * -execdir*)",
+      "Bash(find * -delete*)",
+      "Bash(find * -ok*)",
+      "Bash(sudo *)",
+      "Bash(rm -rf /*)",
+      "Bash(rm -fr /*)",
+      "Bash(rm -rf ~*)",
+      "Bash(rm -rf .)",
+      "Bash(rm -rf ./*)",
+      "Bash(rm -rf *)",
+      "Bash(rm -r *)",
+      "Bash(rm -fr *)",
+      "Bash(gh repo *)",
+      "Bash(gh release *)",
+      "Bash(npm publish*)",
+      "Bash(npm config*)",
+      "Bash(npm login*)",
+      "Bash(npm token*)",
+      "Bash(npm adduser*)",
+      "Bash(kubectl delete*)",
+      "Bash(terraform destroy*)",
+      "Bash(gh pr *)",
+      "Bash(gh issue *)",
+      "Bash(gh api *)",
+      "Bash(gh run *)",
+      "Bash(gh workflow *)",
+      "mcp__github__merge_pull_request",
+      "mcp__github__delete_file",
+      "mcp__github__push_files",
+      "mcp__github__create_or_update_file",
+      "mcp__github__create_repository",
+      "mcp__github__fork_repository"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/bash-lint.py"
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/slack-notify.py"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/outline-sync.py post-write"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/slack-notify.py"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/langfuse_hook.py wrap save-context-snapshot -- bash .claude/hooks/save-context-snapshot.sh"
+          }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/langfuse_hook.py wrap restore-context -- bash .claude/hooks/restore-context.sh"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/langfuse_hook.py wrap restore-context -- bash .claude/hooks/restore-context.sh"
+          },
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/outline-sync.py session-start"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --no-project --with 'langfuse>=3.0,<4.0' --python 3.12 .claude/hooks/langfuse_hook.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/slack-notify.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/outline-sync.py sync-finished"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/outline-sync.py sync-finished"
+          }
+        ]
+      }
+    ]
+  },
+  "autoCompactEnabled": true,
+  "sandbox": {
+    "enabled": true,
+    "failIfUnavailable": true,
+    "autoAllowBashIfSandboxed": true,
+    "allowUnsandboxedCommands": true,
+    "excludedCommands": [
+      "git add*",
+      "git cherry-pick*",
+      "git commit*",
+      "git push*",
+      "git merge*",
+      "git fetch*",
+      "test *",
+      "docker *",
+      "docker-compose *",
+      "kubectl *",
+      "pnpm install*",
+      "npm run e2e*",
+      "bash .claude/scripts/run-e2e.sh*",
+      "bash .claude/scripts/run-eval.sh*",
+      "bash .claude/scripts/langfuse-up.sh*",
+      "npx playwright *",
+      "pnpm exec playwright *",
+      "pnpm playwright *"
+    ],
+    "filesystem": {
+      "allowRead": [
+        "./",
+        "~/.cache/**",
+        "~/.cargo/**",
+        "~/.rustup/**",
+        "~/.expo/**"
+      ],
+      "allowWrite": [
+        ".",
+        "/tmp",
+        "~/.claude/**",
+        "~/.cursor/**",
+        "~/.cache/**",
+        "~/Library/Caches/**",
+        "~/.npm/**",
+        "~/Library/pnpm/**",
+        "~/.cargo/**",
+        "~/.expo/**"
+      ],
+      "denyRead": [
+        "~/.aws/**",
+        "~/.aws/credentials",
+        "~/.aws/config",
+        "~/.ssh/id_*",
+        "~/.config/gcloud/**",
+        "~/.kube/**",
+        "~/.netrc",
+        "~/.git-credentials",
+        "**/.env",
+        "**/.env.local",
+        "**/.env.*.local",
+        "**/.env.development",
+        "**/.env.dev",
+        "**/.env.production",
+        "**/.env.prod",
+        "**/.env.staging",
+        "**/.env.test",
+        "**/.claude/settings.local.json",
+        "./.claude/settings.local.json",
+        "**/*.key",
+        "**/*.pem"
+      ],
+      "denyWrite": [
+        "**/.env",
+        "**/.env.local",
+        "**/.env.*.local",
+        "**/.env.development",
+        "**/.env.dev",
+        "**/.env.production",
+        "**/.env.prod",
+        "**/.env.staging",
+        "**/.env.test",
+        "**/*.key",
+        "**/*.pem",
+        "~/.claude/settings.json",
+        "~/.claude/settings.local.json",
+        "~/.claude/agents/**",
+        "~/.claude/hooks/**",
+        "**/.claude/settings.json",
+        "./.claude/settings.json",
+        "**/.claude/settings.local.json",
+        "./.claude/settings.local.json"
+      ]
+    },
+    "network": {
+      "allowLocalBinding": true,
+      "allowMachLookup": [
+        "org.chromium.Chromium.MachPortRendezvousServer.*",
+        "org.mozilla.firefox.*",
+        "org.mozilla.*"
+      ],
+      "allowedDomains": [
+        "api.anthropic.com",
+        "registry.npmjs.org",
+        "*.npmjs.org",
+        "pypi.org",
+        "files.pythonhosted.org",
+        "github.com",
+        "*.github.com",
+        "api.github.com",
+        "codeload.github.com",
+        "objects.githubusercontent.com",
+        "raw.githubusercontent.com",
+        "localhost",
+        "127.0.0.1",
+        "host.docker.internal",
+        "*.datadoghq.com",
+        "hooks.slack.com",
+        "crates.io",
+        "*.crates.io",
+        "outline.myorder.internal"
+      ]
+    }
+  }
+}

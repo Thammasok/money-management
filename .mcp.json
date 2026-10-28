@@ -1,0 +1,27 @@
+{
+  "mcpServers": {
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/x/all",
+      "headers": { "Authorization": "Bearer ${GITHUB_PAT}" }
+    },
+    "outline": {
+      "type": "http",
+      "url": "${OUTLINE_BASE_URL}/mcp",
+      "headers": { "Authorization": "Bearer ${OUTLINE_API_KEY}" }
+    },
+    "supabase": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp?project_ref=${SUPABASE_PROJECT_REF}",
+      "headers": { "Authorization": "Bearer ${SUPABASE_ACCESS_TOKEN}" }
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest", "--output-dir", ".playwright-mcp"]
+    },
+    "chrome-devtools": {
+      "command": "npx",
+      "args": ["-y", "chrome-devtools-mcp@latest"]
+    }
+  }
+}

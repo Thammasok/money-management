@@ -1,0 +1,1 @@
+- [Money management epic conventions](project_money_management_epic.md) — Ledger/Summary modules, BIGINT minor units, date-only transactions, invented terms

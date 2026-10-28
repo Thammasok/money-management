@@ -1,0 +1,6 @@
+[submodule "sass-factory"]
+	path = sass-factory
+	url = git@github.com:myorder-intelligence/saas-factory.git
+[submodule "saas-factory"]
+	path = saas-factory
+	url = git@github.com:myorder-intelligence/saas-factory.git
