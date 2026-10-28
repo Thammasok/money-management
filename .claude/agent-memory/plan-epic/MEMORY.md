@@ -1,1 +1,1 @@
-- [Money management epic conventions](project_money_management_epic.md) — Ledger/Summary modules, BIGINT minor units, date-only transactions, invented terms
+- [Money management epic conventions](project_money_management_epic.md) — post-grilling shape (multi-user, Currency per Wallet, sharing, Frankfurter) + recheck pitfalls
