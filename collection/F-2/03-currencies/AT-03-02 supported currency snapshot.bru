@@ -1,0 +1,41 @@
+meta {
+  name: AT-03-02 supported currency snapshot
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/v1/currencies
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidCur}}
+}
+
+tests {
+  // Q-22 / Q-35 — Frankfurter's list as verified 2026-10-29 (30 codes, sorted), ISO-4217 digits
+  const CODES = ["AUD","BRL","CAD","CHF","CNY","CZK","DKK","EUR","GBP","HKD","HUF","IDR","ILS","INR","ISK","JPY","KRW","MXN","MYR","NOK","NZD","PHP","PLN","RON","SEK","SGD","THB","TRY","USD","ZAR"];
+  const ZERO_DIGITS = ["ISK", "JPY", "KRW"];
+  test("200 with exactly the 30 snapshot codes, sorted", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(Object.keys(res.getBody())).to.deep.equal(["currencies"]);
+    expect(res.getBody().currencies.map(function (c) { return c.code; })).to.deep.equal(CODES);
+  });
+  test("each entry is { code, name, minorDigits } with ISO-4217 digits", function () {
+    res.getBody().currencies.forEach(function (c) {
+      expect(Object.keys(c).sort()).to.deep.equal(["code", "minorDigits", "name"]);
+      expect(c.name).to.be.a("string").and.not.equal("");
+      expect(c.minorDigits).to.equal(ZERO_DIGITS.indexOf(c.code) >= 0 ? 0 : 2);
+    });
+  });
+  test("names as Frankfurter publishes them (spot check)", function () {
+    const byCode = {};
+    res.getBody().currencies.forEach(function (c) { byCode[c.code] = c.name; });
+    expect(byCode.THB).to.equal("Thai Baht");
+    expect(byCode.USD).to.equal("United States Dollar");
+    expect(byCode.JPY).to.equal("Japanese Yen");
+    expect(byCode.EUR).to.equal("Euro");
+  });
+}

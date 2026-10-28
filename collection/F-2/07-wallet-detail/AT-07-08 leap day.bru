@@ -1,0 +1,44 @@
+meta {
+  name: AT-07-08 leap day
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/api/v1/wallets/{{walletIdLeap}}/transactions
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidDetail}}
+}
+
+body:json {
+  {
+    "today": "{{today}}",
+    "kind": "expense",
+    "amountMinor": "700",
+    "occurredOn": "2024-02-29",
+    "note": "Leap"
+  }
+}
+
+tests {
+  // S-10 / AD-1 — a past leap day is a real date
+  test("201 Transaction with exactly the Transaction keys", function () {
+    expect(res.getStatus()).to.equal(201);
+    const t = res.getBody();
+    expect(Object.keys(t).sort()).to.deep.equal(["amountMinor", "createdAt", "id", "kind", "note", "occurredOn", "updatedAt", "walletId"]);
+    expect(t.id).to.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+    expect(t.createdAt).to.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/);
+  });
+  test("fields", function () {
+    const t = res.getBody();
+    expect(t.walletId).to.equal(bru.getVar("walletIdLeap"));
+    expect(t.kind).to.equal("expense");
+    expect(t.amountMinor).to.equal("700");
+    expect(t.occurredOn).to.equal("2024-02-29");
+    expect(t.note).to.equal("Leap");
+  });
+}

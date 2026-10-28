@@ -1,0 +1,24 @@
+meta {
+  name: AT-06-34 yen balance
+  type: http
+  seq: 34
+}
+
+get {
+  url: {{baseUrl}}/api/v1/wallets/{{walletIdYen}}
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidRec}}
+}
+
+tests {
+  // S-4 — 0 + 999999999999999 - 999999999999999 - 1500 = -1500, exact (no float)
+  test("balanceMinor -1500", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().balanceMinor).to.equal("-1500");
+    expect(res.getBody().currency).to.equal("JPY");
+  });
+}

@@ -1,0 +1,33 @@
+meta {
+  name: AT-07-06 newest date first then newest recorded
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/api/v1/wallets/{{walletIdOrder}}
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidDetail}}
+}
+
+tests {
+  // S-9 — occurredOn desc, then createdAt desc: C, A, B; Balance 0 - 100 + 200 - 300 = -200
+  test("order C, A, B", function () {
+    expect(res.getStatus()).to.equal(200);
+    const ids = res.getBody().transactions.map(function (t) { return t.id; });
+    expect(ids).to.deep.equal([bru.getVar("txC"), bru.getVar("txA"), bru.getVar("txB")]);
+  });
+  test("balanceMinor -200", function () {
+    expect(res.getBody().balanceMinor).to.equal("-200");
+  });
+  test("every Transaction has exactly the Transaction keys", function () {
+    res.getBody().transactions.forEach(function (t) {
+      expect(Object.keys(t).sort()).to.deep.equal(["amountMinor", "createdAt", "id", "kind", "note", "occurredOn", "updatedAt", "walletId"]);
+      expect(t.walletId).to.equal(bru.getVar("walletIdOrder"));
+    });
+  });
+}

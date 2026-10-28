@@ -1,0 +1,32 @@
+meta {
+  name: AT-08-05 intruder records into A-Cash
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/api/v1/wallets/{{walletIdA}}/transactions
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidIntruder}}
+}
+
+body:json {
+  {
+    "today": "{{today}}",
+    "kind": "expense",
+    "amountMinor": "100",
+    "occurredOn": "{{today}}"
+  }
+}
+
+tests {
+  // S-20 — recording into another User's Wallet is 404
+  test("404 Wallet not found. (exact body)", function () {
+    expect(res.getStatus()).to.equal(404);
+    expect(res.getBody()).to.deep.equal({ statusCode: 404, message: "Wallet not found.", error: "Not Found" });
+  });
+}

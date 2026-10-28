@@ -1,0 +1,32 @@
+meta {
+  name: AT-06-08 negative amount
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/api/v1/wallets/{{walletIdRec}}/transactions
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidRec}}
+}
+
+body:json {
+  {
+    "kind": "expense",
+    "amountMinor": "-5",
+    "occurredOn": "{{today}}",
+    "today": "{{today}}"
+  }
+}
+
+tests {
+  // S-19 — direction comes from Kind; amounts are positive
+  test("400 with exactly ['Amount must be a whole number of minor units.']", function () {
+    expect(res.getStatus()).to.equal(400);
+    expect(res.getBody()).to.deep.equal({ statusCode: 400, message: ["Amount must be a whole number of minor units."], error: "Bad Request" });
+  });
+}

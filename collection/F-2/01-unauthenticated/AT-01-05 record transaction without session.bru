@@ -1,0 +1,28 @@
+meta {
+  name: AT-01-05 record transaction without session
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/api/v1/wallets/3f6c1a52-9d7e-4b8a-a1c4-5e2f7d9b0c13/transactions
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "today": "{{today}}",
+    "kind": "expense",
+    "amountMinor": "100",
+    "occurredOn": "{{today}}"
+  }
+}
+
+tests {
+  // S-23 — every F-2 endpoint is protected by the global SessionGuard
+  test("401 Not signed in. (exact body)", function () {
+    expect(res.getStatus()).to.equal(401);
+    expect(res.getBody()).to.deep.equal({ statusCode: 401, message: "Not signed in.", error: "Unauthorized" });
+  });
+}

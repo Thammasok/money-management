@@ -1,0 +1,43 @@
+meta {
+  name: AT-06-32 expense makes JPY negative
+  type: http
+  seq: 32
+}
+
+post {
+  url: {{baseUrl}}/api/v1/wallets/{{walletIdYen}}/transactions
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidRec}}
+}
+
+body:json {
+  {
+    "kind": "expense",
+    "amountMinor": "999999999999999",
+    "occurredOn": "{{today}}",
+    "today": "{{today}}"
+  }
+}
+
+tests {
+  // S-4 setup
+  test("201 Transaction with exactly the Transaction keys", function () {
+    expect(res.getStatus()).to.equal(201);
+    const t = res.getBody();
+    expect(Object.keys(t).sort()).to.deep.equal(["amountMinor", "createdAt", "id", "kind", "note", "occurredOn", "updatedAt", "walletId"]);
+    expect(t.id).to.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+    expect(t.createdAt).to.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/);
+  });
+  test("fields", function () {
+    const t = res.getBody();
+    expect(t.walletId).to.equal(bru.getVar("walletIdYen"));
+    expect(t.kind).to.equal("expense");
+    expect(t.amountMinor).to.equal("999999999999999");
+    expect(t.occurredOn).to.equal(bru.getVar("today"));
+    expect(t.note).to.equal(null);
+  });
+}

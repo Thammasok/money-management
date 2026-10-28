@@ -1,0 +1,30 @@
+meta {
+  name: F-2 Record Income and Expense in a Wallet
+}
+
+script:pre-request {
+  // Once per collection run: a unique runId (every folder signs up its own Users as
+  // `{prefix}-{{runId}}@example.test`, so runs never collide on a shared database) and the
+  // runner's LOCAL calendar dates — the same "today" the Web App sends (never toISOString, which is UTC).
+  if (!bru.getVar("runId")) {
+    const runId = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    bru.setVar("runId", runId);
+    const pad = function (n) { return String(n).padStart(2, "0"); };
+    const localDate = function (offsetDays) {
+      const d = new Date();
+      d.setDate(d.getDate() + offsetDays);
+      return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+    };
+    bru.setVar("today", localDate(0));
+    bru.setVar("tomorrow", localDate(1));
+    bru.setVar("threeDaysAgo", localDate(-3));
+  }
+}
+
+docs {
+  Acceptance-contract API suite for F-2 (artifacts/F-2/06-api-test-plan.md).
+  Run from this folder with cookies DISABLED — every request sends its session explicitly:
+    bru run -r --env mock --disable-cookies          (Stage 7: Mountebank impostor on :4545)
+    bru run -r --env integration --disable-cookies   (Stage 13: NestJS on :3000 + Postgres)
+  Root shortcuts: npm run api:test:mock:F-2 / npm run api:test:integration:F-2
+}

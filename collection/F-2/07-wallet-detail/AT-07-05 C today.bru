@@ -1,0 +1,48 @@
+meta {
+  name: AT-07-05 C today
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/api/v1/wallets/{{walletIdOrder}}/transactions
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidDetail}}
+}
+
+body:json {
+  {
+    "today": "{{today}}",
+    "kind": "expense",
+    "amountMinor": "300",
+    "occurredOn": "{{today}}",
+    "note": "C"
+  }
+}
+
+script:post-response {
+  bru.setVar("txC", res.getBody() && res.getBody().id);
+}
+
+tests {
+  // S-9 — C: today, recorded last
+  test("201 Transaction with exactly the Transaction keys", function () {
+    expect(res.getStatus()).to.equal(201);
+    const t = res.getBody();
+    expect(Object.keys(t).sort()).to.deep.equal(["amountMinor", "createdAt", "id", "kind", "note", "occurredOn", "updatedAt", "walletId"]);
+    expect(t.id).to.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+    expect(t.createdAt).to.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/);
+  });
+  test("fields", function () {
+    const t = res.getBody();
+    expect(t.walletId).to.equal(bru.getVar("walletIdOrder"));
+    expect(t.kind).to.equal("expense");
+    expect(t.amountMinor).to.equal("300");
+    expect(t.occurredOn).to.equal(bru.getVar("today"));
+    expect(t.note).to.equal("C");
+  });
+}

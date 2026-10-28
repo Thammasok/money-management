@@ -1,0 +1,23 @@
+meta {
+  name: AT-02-02 no wallets yet
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/v1/wallets
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidSkel}}
+}
+
+tests {
+  // S-1 ⭐ / S-11 — a new User has no Wallets
+  test("200 { wallets: [] }", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody()).to.deep.equal({ wallets: [] });
+  });
+}

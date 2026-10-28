@@ -1,0 +1,31 @@
+meta {
+  name: AT-04-02 blank name
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/v1/wallets
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidCreate}}
+}
+
+body:json {
+  {
+    "name": "   ",
+    "currency": "THB",
+    "openingBalanceMinor": "0"
+  }
+}
+
+tests {
+  // S-14 — a blank name (after trimming) is no name
+  test("400 with exactly ['Enter a wallet name.']", function () {
+    expect(res.getStatus()).to.equal(400);
+    expect(res.getBody()).to.deep.equal({ statusCode: 400, message: ["Enter a wallet name."], error: "Bad Request" });
+  });
+}

@@ -29,7 +29,17 @@ const imposters = {
       protocol: 'http',
       name: 'money-management-api',
       recordRequests: false,
-      stubs: [{ responses: [{ inject: loadInjection('identity-api.inject.js') }] }],
+      // Order matters: Mountebank uses the first stub whose predicates match. All injections share the
+      // imposter's `config.state`, so Ledger reads the Sessions Identity stores.
+      stubs: [
+        {
+          // F-2 Ledger + Exchange Rates (currencies, wallets, transactions)
+          predicates: [{ matches: { path: '^/api/v1/(currencies|wallets)(/.*)?$' } }],
+          responses: [{ inject: loadInjection('ledger-api.inject.js') }],
+        },
+        // F-1 Identity — also the catch-all (unknown routes → Nest-shaped 404)
+        { responses: [{ inject: loadInjection('identity-api.inject.js') }] },
+      ],
     },
   ],
 };

@@ -1,0 +1,32 @@
+meta {
+  name: AT-08-10 invalid body to unknown wallet
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{baseUrl}}/api/v1/wallets/3f6c1a52-9d7e-4b8a-a1c4-5e2f7d9b0c13/transactions
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidIntruder}}
+}
+
+body:json {
+  {
+    "today": "{{today}}",
+    "kind": "transfer",
+    "amountMinor": "100",
+    "occurredOn": "{{today}}"
+  }
+}
+
+tests {
+  // S-22 — request shape (400) is checked before visibility (404)
+  test("400 with exactly ['Choose income or expense.']", function () {
+    expect(res.getStatus()).to.equal(400);
+    expect(res.getBody()).to.deep.equal({ statusCode: 400, message: ["Choose income or expense."], error: "Bad Request" });
+  });
+}

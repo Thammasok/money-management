@@ -1,0 +1,23 @@
+meta {
+  name: AT-05-07 other user sees only theirs
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/api/v1/wallets
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidOther}}
+}
+
+tests {
+  // S-20 — the other User's list holds only their own Wallet
+  test("exactly Other", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().wallets.map(function (w) { return w.id; })).to.deep.equal([bru.getVar("walletIdOther")]);
+  });
+}

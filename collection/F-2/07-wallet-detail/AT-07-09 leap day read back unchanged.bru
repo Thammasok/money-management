@@ -1,0 +1,24 @@
+meta {
+  name: AT-07-09 leap day read back unchanged
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{baseUrl}}/api/v1/wallets/{{walletIdLeap}}
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidDetail}}
+}
+
+tests {
+  // S-10 / AD-1 — the DATE comes back from Postgres byte-identical (no timezone shift through pg or JSON)
+  test("occurredOn 2024-02-29", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().transactions.map(function (t) { return t.occurredOn; })).to.deep.equal(["2024-02-29"]);
+    expect(res.getBody().balanceMinor).to.equal("-700");
+  });
+}

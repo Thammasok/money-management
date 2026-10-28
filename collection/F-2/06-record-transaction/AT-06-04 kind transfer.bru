@@ -1,0 +1,32 @@
+meta {
+  name: AT-06-04 kind transfer
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/api/v1/wallets/{{walletIdRec}}/transactions
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidRec}}
+}
+
+body:json {
+  {
+    "kind": "transfer",
+    "amountMinor": "100",
+    "occurredOn": "{{today}}",
+    "today": "{{today}}"
+  }
+}
+
+tests {
+  // S-19 — Kind is income or expense only (a Transfer is not a Transaction)
+  test("400 with exactly ['Choose income or expense.']", function () {
+    expect(res.getStatus()).to.equal(400);
+    expect(res.getBody()).to.deep.equal({ statusCode: 400, message: ["Choose income or expense."], error: "Bad Request" });
+  });
+}

@@ -1,0 +1,31 @@
+meta {
+  name: AT-06-15 date missing
+  type: http
+  seq: 15
+}
+
+post {
+  url: {{baseUrl}}/api/v1/wallets/{{walletIdRec}}/transactions
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidRec}}
+}
+
+body:json {
+  {
+    "kind": "expense",
+    "amountMinor": "100",
+    "today": "{{today}}"
+  }
+}
+
+tests {
+  // S-19
+  test("400 with exactly ['Enter a valid date.']", function () {
+    expect(res.getStatus()).to.equal(400);
+    expect(res.getBody()).to.deep.equal({ statusCode: 400, message: ["Enter a valid date."], error: "Bad Request" });
+  });
+}

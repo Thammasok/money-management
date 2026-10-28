@@ -1,0 +1,38 @@
+meta {
+  name: AT-04-25 client cannot choose id or balance
+  type: http
+  seq: 25
+}
+
+post {
+  url: {{baseUrl}}/api/v1/wallets
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidCreate}}
+}
+
+body:json {
+  {
+    "id": "3f6c1a52-9d7e-4b8a-a1c4-5e2f7d9b0c13",
+    "userId": "00000000-0000-4000-8000-000000000000",
+    "balanceMinor": "999",
+    "name": "Smuggle",
+    "currency": "THB",
+    "openingBalanceMinor": "10"
+  }
+}
+
+tests {
+  // whitelist — undeclared fields are dropped; id/userId/balance are the server's
+  test("201 with a server id and the derived balance", function () {
+    expect(res.getStatus()).to.equal(201);
+    const w = res.getBody();
+    expect(w.id).to.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+    expect(w.id).to.not.equal("3f6c1a52-9d7e-4b8a-a1c4-5e2f7d9b0c13");
+    expect(w.balanceMinor).to.equal("10");
+    expect(Object.keys(w).sort()).to.deep.equal(["balanceMinor", "createdAt", "currency", "id", "name", "openingBalanceMinor", "updatedAt"]);
+  });
+}

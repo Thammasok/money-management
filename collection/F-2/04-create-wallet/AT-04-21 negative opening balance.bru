@@ -1,0 +1,42 @@
+meta {
+  name: AT-04-21 negative opening balance
+  type: http
+  seq: 21
+}
+
+post {
+  url: {{baseUrl}}/api/v1/wallets
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidCreate}}
+}
+
+body:json {
+  {
+    "name": "Card",
+    "currency": "THB",
+    "openingBalanceMinor": "-250075"
+  }
+}
+
+tests {
+  // S-8 — an Opening Balance may be negative
+  test("201 Wallet with exactly the Wallet keys", function () {
+    expect(res.getStatus()).to.equal(201);
+    const w = res.getBody();
+    expect(Object.keys(w).sort()).to.deep.equal(["balanceMinor", "createdAt", "currency", "id", "name", "openingBalanceMinor", "updatedAt"]);
+    expect(w.id).to.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+    expect(w.createdAt).to.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/);
+    expect(w.updatedAt).to.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/);
+  });
+  test("fields", function () {
+    const w = res.getBody();
+    expect(w.name).to.equal("Card");
+    expect(w.currency).to.equal("THB");
+    expect(w.openingBalanceMinor).to.equal("-250075");
+    expect(w.balanceMinor).to.equal("-250075");
+  });
+}

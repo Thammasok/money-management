@@ -1,0 +1,23 @@
+meta {
+  name: AT-07-12 exact minor unit sum
+  type: http
+  seq: 12
+}
+
+get {
+  url: {{baseUrl}}/api/v1/wallets/{{walletIdCents}}
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidDetail}}
+}
+
+tests {
+  // S-13 — 1 + 10 = 11 exactly
+  test("balanceMinor 11", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().balanceMinor).to.equal("11");
+  });
+}

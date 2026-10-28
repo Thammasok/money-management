@@ -1,0 +1,25 @@
+meta {
+  name: AT-05-06 only own wallets newest first
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/api/v1/wallets
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidList}}
+}
+
+tests {
+  // S-6 / S-20 — newest first (Q-11 default = first row's currency), never another User's
+  test("exactly Bank then Cash", function () {
+    expect(res.getStatus()).to.equal(200);
+    const list = res.getBody().wallets;
+    expect(list.map(function (w) { return w.id; })).to.deep.equal([bru.getVar("walletIdListBank"), bru.getVar("walletIdListCash")]);
+    expect(list[0].currency).to.equal("USD");
+  });
+}

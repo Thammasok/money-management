@@ -1,0 +1,33 @@
+meta {
+  name: AT-06-17 note 201 characters
+  type: http
+  seq: 17
+}
+
+post {
+  url: {{baseUrl}}/api/v1/wallets/{{walletIdRec}}/transactions
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidRec}}
+}
+
+body:json {
+  {
+    "kind": "expense",
+    "amountMinor": "100",
+    "occurredOn": "{{today}}",
+    "today": "{{today}}",
+    "note": "nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"
+  }
+}
+
+tests {
+  // S-19 boundary
+  test("400 with exactly ['Note must be at most 200 characters.']", function () {
+    expect(res.getStatus()).to.equal(400);
+    expect(res.getBody()).to.deep.equal({ statusCode: 400, message: ["Note must be at most 200 characters."], error: "Bad Request" });
+  });
+}

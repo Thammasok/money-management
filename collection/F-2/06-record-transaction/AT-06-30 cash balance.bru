@@ -1,0 +1,24 @@
+meta {
+  name: AT-06-30 cash balance
+  type: http
+  seq: 30
+}
+
+get {
+  url: {{baseUrl}}/api/v1/wallets/{{walletIdRec}}
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidRec}}
+}
+
+tests {
+  // S-2 — 100000 - 1 - 100 - 100 + 5000 - 7 + 50 = 104842 over 6 Transactions
+  test("balanceMinor 104842", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().balanceMinor).to.equal("104842");
+    expect(res.getBody().transactions).to.have.length(6);
+  });
+}

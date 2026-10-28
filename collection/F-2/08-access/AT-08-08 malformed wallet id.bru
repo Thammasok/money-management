@@ -1,0 +1,23 @@
+meta {
+  name: AT-08-08 malformed wallet id
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/api/v1/wallets/not-a-uuid
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidIntruder}}
+}
+
+tests {
+  // S-21 — a malformed id is 404 too, never 400
+  test("404 Wallet not found. (exact body)", function () {
+    expect(res.getStatus()).to.equal(404);
+    expect(res.getBody()).to.deep.equal({ statusCode: 404, message: "Wallet not found.", error: "Not Found" });
+  });
+}

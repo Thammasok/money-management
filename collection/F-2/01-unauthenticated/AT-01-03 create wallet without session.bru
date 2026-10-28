@@ -1,0 +1,27 @@
+meta {
+  name: AT-01-03 create wallet without session
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/v1/wallets
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Cash",
+    "currency": "THB",
+    "openingBalanceMinor": "0"
+  }
+}
+
+tests {
+  // S-23 — every F-2 endpoint is protected by the global SessionGuard
+  test("401 Not signed in. (exact body)", function () {
+    expect(res.getStatus()).to.equal(401);
+    expect(res.getBody()).to.deep.equal({ statusCode: 401, message: "Not signed in.", error: "Unauthorized" });
+  });
+}

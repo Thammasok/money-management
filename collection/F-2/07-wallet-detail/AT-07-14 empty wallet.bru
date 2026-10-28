@@ -1,0 +1,30 @@
+meta {
+  name: AT-07-14 empty wallet
+  type: http
+  seq: 14
+}
+
+get {
+  url: {{baseUrl}}/api/v1/wallets/{{walletIdEmpty}}
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidDetail}}
+}
+
+tests {
+  // S-11 — no Transactions: empty list and Balance = Opening Balance
+  test("exact empty Wallet detail", function () {
+    expect(res.getStatus()).to.equal(200);
+    const w = res.getBody();
+    expect(Object.keys(w).sort()).to.deep.equal(["balanceMinor", "createdAt", "currency", "id", "name", "openingBalanceMinor", "transactions", "updatedAt"]);
+    expect(w.id).to.equal(bru.getVar("walletIdEmpty"));
+    expect(w.name).to.equal("Empty");
+    expect(w.currency).to.equal("EUR");
+    expect(w.openingBalanceMinor).to.equal("1230");
+    expect(w.balanceMinor).to.equal("1230");
+    expect(w.transactions).to.deep.equal([]);
+  });
+}

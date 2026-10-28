@@ -1,0 +1,19 @@
+meta {
+  name: AT-01-01 currencies without session
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/currencies
+  body: none
+  auth: none
+}
+
+tests {
+  // S-23 — every F-2 endpoint is protected by the global SessionGuard
+  test("401 Not signed in. (exact body)", function () {
+    expect(res.getStatus()).to.equal(401);
+    expect(res.getBody()).to.deep.equal({ statusCode: 401, message: "Not signed in.", error: "Unauthorized" });
+  });
+}

@@ -1,0 +1,42 @@
+meta {
+  name: AT-04-22 opening balance 15 digits
+  type: http
+  seq: 22
+}
+
+post {
+  url: {{baseUrl}}/api/v1/wallets
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidCreate}}
+}
+
+body:json {
+  {
+    "name": "Big",
+    "currency": "KRW",
+    "openingBalanceMinor": "999999999999999"
+  }
+}
+
+tests {
+  // S-16 boundary — 15 digits is the largest allowed
+  test("201 Wallet with exactly the Wallet keys", function () {
+    expect(res.getStatus()).to.equal(201);
+    const w = res.getBody();
+    expect(Object.keys(w).sort()).to.deep.equal(["balanceMinor", "createdAt", "currency", "id", "name", "openingBalanceMinor", "updatedAt"]);
+    expect(w.id).to.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+    expect(w.createdAt).to.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/);
+    expect(w.updatedAt).to.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/);
+  });
+  test("fields", function () {
+    const w = res.getBody();
+    expect(w.name).to.equal("Big");
+    expect(w.currency).to.equal("KRW");
+    expect(w.openingBalanceMinor).to.equal("999999999999999");
+    expect(w.balanceMinor).to.equal("999999999999999");
+  });
+}

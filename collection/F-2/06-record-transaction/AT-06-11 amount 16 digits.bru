@@ -1,0 +1,32 @@
+meta {
+  name: AT-06-11 amount 16 digits
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{baseUrl}}/api/v1/wallets/{{walletIdRec}}/transactions
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidRec}}
+}
+
+body:json {
+  {
+    "kind": "expense",
+    "amountMinor": "1234567890123456",
+    "occurredOn": "{{today}}",
+    "today": "{{today}}"
+  }
+}
+
+tests {
+  // S-19 boundary
+  test("400 with exactly ['Amount is too large.']", function () {
+    expect(res.getStatus()).to.equal(400);
+    expect(res.getBody()).to.deep.equal({ statusCode: 400, message: ["Amount is too large."], error: "Bad Request" });
+  });
+}

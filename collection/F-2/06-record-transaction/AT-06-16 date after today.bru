@@ -1,0 +1,32 @@
+meta {
+  name: AT-06-16 date after today
+  type: http
+  seq: 16
+}
+
+post {
+  url: {{baseUrl}}/api/v1/wallets/{{walletIdRec}}/transactions
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidRec}}
+}
+
+body:json {
+  {
+    "kind": "expense",
+    "amountMinor": "100",
+    "occurredOn": "{{tomorrow}}",
+    "today": "{{today}}"
+  }
+}
+
+tests {
+  // S-17 / Q-45 — occurredOn later than the browser's today
+  test("400 with exactly ['Date can't be in the future.']", function () {
+    expect(res.getStatus()).to.equal(400);
+    expect(res.getBody()).to.deep.equal({ statusCode: 400, message: ["Date can't be in the future."], error: "Bad Request" });
+  });
+}

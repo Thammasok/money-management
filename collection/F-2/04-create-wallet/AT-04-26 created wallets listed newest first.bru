@@ -1,0 +1,24 @@
+meta {
+  name: AT-04-26 created wallets listed newest first
+  type: http
+  seq: 26
+}
+
+get {
+  url: {{baseUrl}}/api/v1/wallets
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidCreate}}
+}
+
+tests {
+  // S-6 — the 8 Wallets created above, newest createdAt first
+  test("8 Wallets, newest first", function () {
+    expect(res.getStatus()).to.equal(200);
+    const names = res.getBody().wallets.map(function (w) { return w.name; });
+    expect(names).to.deep.equal(["Smuggle", "Minus Zero", "Zeros", "Big", "Card", "Yen Card", "Savings", "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"]);
+  });
+}

@@ -1,0 +1,32 @@
+meta {
+  name: AT-08-01 sign up owner
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/users
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "owner-{{runId}}@example.test",
+    "password": "{{validPassword}}"
+  }
+}
+
+script:post-response {
+  const raw = [].concat(res.getHeader("set-cookie") || []).join("; ");
+  const m = raw.match(/sid=([^;]*)/);
+  bru.setVar("sidOwner", m ? m[1] : "");
+}
+
+tests {
+  // setup — a fresh User owned by this folder only
+  test("201 signed up with a session", function () {
+    expect(res.getStatus()).to.equal(201);
+    expect(bru.getVar("sidOwner")).to.match(/^[A-Za-z0-9_-]{20,}$/);
+  });
+}

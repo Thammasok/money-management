@@ -1,0 +1,23 @@
+meta {
+  name: AT-04-17 nothing was created
+  type: http
+  seq: 17
+}
+
+get {
+  url: {{baseUrl}}/api/v1/wallets
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidCreate}}
+}
+
+tests {
+  // S-14..S-16 — none of the refused requests stored a Wallet
+  test("200 { wallets: [] }", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody()).to.deep.equal({ wallets: [] });
+  });
+}

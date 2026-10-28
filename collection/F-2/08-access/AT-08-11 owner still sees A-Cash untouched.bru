@@ -1,0 +1,24 @@
+meta {
+  name: AT-08-11 owner still sees A-Cash untouched
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{baseUrl}}/api/v1/wallets/{{walletIdA}}
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidOwner}}
+}
+
+tests {
+  // S-20 — the intruder's attempt stored nothing
+  test("200, no Transactions, balance 5000", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().transactions).to.deep.equal([]);
+    expect(res.getBody().balanceMinor).to.equal("5000");
+  });
+}

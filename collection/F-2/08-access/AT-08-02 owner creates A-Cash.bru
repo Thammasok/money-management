@@ -1,0 +1,46 @@
+meta {
+  name: AT-08-02 owner creates A-Cash
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/v1/wallets
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidOwner}}
+}
+
+body:json {
+  {
+    "name": "A-Cash",
+    "currency": "THB",
+    "openingBalanceMinor": "5000"
+  }
+}
+
+script:post-response {
+  bru.setVar("walletIdA", res.getBody() && res.getBody().id);
+}
+
+tests {
+  // S-20 setup
+  test("201 Wallet with exactly the Wallet keys", function () {
+    expect(res.getStatus()).to.equal(201);
+    const w = res.getBody();
+    expect(Object.keys(w).sort()).to.deep.equal(["balanceMinor", "createdAt", "currency", "id", "name", "openingBalanceMinor", "updatedAt"]);
+    expect(w.id).to.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+    expect(w.createdAt).to.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/);
+    expect(w.updatedAt).to.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/);
+  });
+  test("fields", function () {
+    const w = res.getBody();
+    expect(w.name).to.equal("A-Cash");
+    expect(w.currency).to.equal("THB");
+    expect(w.openingBalanceMinor).to.equal("5000");
+    expect(w.balanceMinor).to.equal("5000");
+  });
+}

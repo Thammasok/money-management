@@ -1,0 +1,28 @@
+meta {
+  name: AT-04-16 text body refused
+  type: http
+  seq: 16
+}
+
+post {
+  url: {{baseUrl}}/api/v1/wallets
+  body: text
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidCreate}}
+  Content-Type: text/plain
+}
+
+body:text {
+  name=Cash&currency=THB&openingBalanceMinor=0
+}
+
+tests {
+  // F-1 hardening applies to Ledger too — only JSON bodies
+  test("415 Content-Type must be application/json", function () {
+    expect(res.getStatus()).to.equal(415);
+    expect(res.getBody()).to.deep.equal({ statusCode: 415, message: "Content-Type must be application/json", error: "Unsupported Media Type" });
+  });
+}

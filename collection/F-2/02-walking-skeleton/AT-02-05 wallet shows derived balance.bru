@@ -1,0 +1,40 @@
+meta {
+  name: AT-02-05 wallet shows derived balance
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/api/v1/wallets/{{walletIdSkel}}
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidSkel}}
+}
+
+tests {
+  // S-1 ⭐ — Balance derived on read: 100000 - 12550 = 87450; the stored Transaction comes back byte-identical
+  test("200 with exactly the Wallet detail keys", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(Object.keys(res.getBody()).sort()).to.deep.equal(["balanceMinor", "createdAt", "currency", "id", "name", "openingBalanceMinor", "transactions", "updatedAt"]);
+  });
+  test("balanceMinor 87450, one Transaction", function () {
+    const w = res.getBody();
+    expect(w.id).to.equal(bru.getVar("walletIdSkel"));
+    expect(w.name).to.equal("Cash");
+    expect(w.currency).to.equal("THB");
+    expect(w.openingBalanceMinor).to.equal("100000");
+    expect(w.balanceMinor).to.equal("87450");
+    expect(w.transactions).to.have.length(1);
+    const t = w.transactions[0];
+    expect(Object.keys(t).sort()).to.deep.equal(["amountMinor", "createdAt", "id", "kind", "note", "occurredOn", "updatedAt", "walletId"]);
+    expect(t.id).to.equal(bru.getVar("txSkelExpense"));
+    expect(t.walletId).to.equal(bru.getVar("walletIdSkel"));
+    expect(t.kind).to.equal("expense");
+    expect(t.amountMinor).to.equal("12550");
+    expect(t.occurredOn).to.equal(bru.getVar("today"));
+    expect(t.note).to.equal("Lunch");
+  });
+}

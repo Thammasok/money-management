@@ -1,0 +1,31 @@
+meta {
+  name: AT-04-13 opening balance 16 digits
+  type: http
+  seq: 13
+}
+
+post {
+  url: {{baseUrl}}/api/v1/wallets
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidCreate}}
+}
+
+body:json {
+  {
+    "name": "Cash",
+    "currency": "THB",
+    "openingBalanceMinor": "1234567890123456"
+  }
+}
+
+tests {
+  // S-16 boundary — more than 15 digits
+  test("400 with exactly ['Opening balance is too large.']", function () {
+    expect(res.getStatus()).to.equal(400);
+    expect(res.getBody()).to.deep.equal({ statusCode: 400, message: ["Opening balance is too large."], error: "Bad Request" });
+  });
+}

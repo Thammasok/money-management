@@ -1,0 +1,27 @@
+meta {
+  name: AT-02-07 income raises balance newest first
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/api/v1/wallets/{{walletIdSkel}}
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidSkel}}
+}
+
+tests {
+  // S-2 / S-9 — 100000 - 12550 + 200000 = 287450; same date → the later-recorded Income is first
+  test("balanceMinor 287450", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().balanceMinor).to.equal("287450");
+  });
+  test("Transactions newest first", function () {
+    const ids = res.getBody().transactions.map(function (t) { return t.id; });
+    expect(ids).to.deep.equal([bru.getVar("txSkelIncome"), bru.getVar("txSkelExpense")]);
+  });
+}

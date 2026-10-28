@@ -1,0 +1,29 @@
+meta {
+  name: AT-02-08 wallet listed
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/api/v1/wallets
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidSkel}}
+}
+
+tests {
+  // S-1 ⭐ / S-6 — the Wallet is in the User's list with exactly the list keys
+  test("200 with the one Wallet", function () {
+    expect(res.getStatus()).to.equal(200);
+    const list = res.getBody().wallets;
+    expect(list).to.have.length(1);
+    expect(Object.keys(list[0]).sort()).to.deep.equal(["createdAt", "currency", "id", "name"]);
+    expect(list[0].id).to.equal(bru.getVar("walletIdSkel"));
+    expect(list[0].name).to.equal("Cash");
+    expect(list[0].currency).to.equal("THB");
+    expect(list[0].createdAt).to.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/);
+  });
+}

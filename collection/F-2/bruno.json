@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "F-2 Record Income and Expense in a Wallet",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

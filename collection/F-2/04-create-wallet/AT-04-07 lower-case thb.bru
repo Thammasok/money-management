@@ -1,0 +1,31 @@
+meta {
+  name: AT-04-07 lower-case thb
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/api/v1/wallets
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidCreate}}
+}
+
+body:json {
+  {
+    "name": "Cash",
+    "currency": "thb",
+    "openingBalanceMinor": "0"
+  }
+}
+
+tests {
+  // S-15 — codes are exact upper-case
+  test("400 with exactly ['Choose a supported currency.']", function () {
+    expect(res.getStatus()).to.equal(400);
+    expect(res.getBody()).to.deep.equal({ statusCode: 400, message: ["Choose a supported currency."], error: "Bad Request" });
+  });
+}

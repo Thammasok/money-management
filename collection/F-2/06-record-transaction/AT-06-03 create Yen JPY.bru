@@ -1,0 +1,46 @@
+meta {
+  name: AT-06-03 create Yen JPY
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/v1/wallets
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidRec}}
+}
+
+body:json {
+  {
+    "name": "Yen",
+    "currency": "JPY",
+    "openingBalanceMinor": "0"
+  }
+}
+
+script:post-response {
+  bru.setVar("walletIdYen", res.getBody() && res.getBody().id);
+}
+
+tests {
+  // setup
+  test("201 Wallet with exactly the Wallet keys", function () {
+    expect(res.getStatus()).to.equal(201);
+    const w = res.getBody();
+    expect(Object.keys(w).sort()).to.deep.equal(["balanceMinor", "createdAt", "currency", "id", "name", "openingBalanceMinor", "updatedAt"]);
+    expect(w.id).to.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+    expect(w.createdAt).to.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/);
+    expect(w.updatedAt).to.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/);
+  });
+  test("fields", function () {
+    const w = res.getBody();
+    expect(w.name).to.equal("Yen");
+    expect(w.currency).to.equal("JPY");
+    expect(w.openingBalanceMinor).to.equal("0");
+    expect(w.balanceMinor).to.equal("0");
+  });
+}

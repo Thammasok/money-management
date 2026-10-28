@@ -1,0 +1,36 @@
+meta {
+  name: AT-06-29 client cannot choose id or wallet
+  type: http
+  seq: 29
+}
+
+post {
+  url: {{baseUrl}}/api/v1/wallets/{{walletIdRec}}/transactions
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidRec}}
+}
+
+body:json {
+  {
+    "id": "3f6c1a52-9d7e-4b8a-a1c4-5e2f7d9b0c13",
+    "walletId": "00000000-0000-4000-8000-000000000000",
+    "kind": "income",
+    "amountMinor": "50",
+    "occurredOn": "{{today}}",
+    "today": "{{today}}"
+  }
+}
+
+tests {
+  // whitelist — the Wallet comes from the URL, the id from the server
+  test("201 in the URL's Wallet with a server id", function () {
+    expect(res.getStatus()).to.equal(201);
+    expect(res.getBody().walletId).to.equal(bru.getVar("walletIdRec"));
+    expect(res.getBody().id).to.not.equal("3f6c1a52-9d7e-4b8a-a1c4-5e2f7d9b0c13");
+    expect(res.getBody().id).to.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+  });
+}

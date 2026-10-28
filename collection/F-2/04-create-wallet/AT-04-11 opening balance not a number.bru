@@ -1,0 +1,31 @@
+meta {
+  name: AT-04-11 opening balance not a number
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{baseUrl}}/api/v1/wallets
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidCreate}}
+}
+
+body:json {
+  {
+    "name": "Cash",
+    "currency": "THB",
+    "openingBalanceMinor": "abc"
+  }
+}
+
+tests {
+  // S-16
+  test("400 with exactly ['Opening balance must be a whole number of minor units.']", function () {
+    expect(res.getStatus()).to.equal(400);
+    expect(res.getBody()).to.deep.equal({ statusCode: 400, message: ["Opening balance must be a whole number of minor units."], error: "Bad Request" });
+  });
+}
