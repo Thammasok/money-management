@@ -1,0 +1,87 @@
+databaseChangeLog:
+  - changeSet:
+      id: F-2-002-create-transactions
+      author: backend-track
+      changes:
+        # One recorded flow of money into (income) or out of (expense) a single Wallet, on a calendar date.
+        # Not here yet (later features add them): recorded_by_user_id (F-4), category_id (F-8).
+        - createTable:
+            tableName: transactions
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  defaultValueComputed: gen_random_uuid()
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: transactions_pkey
+                    nullable: false
+              - column:
+                  name: wallet_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: kind
+                  type: text
+                  constraints:
+                    nullable: false
+              # Always > 0, in minor units of the Wallet's Currency; the Kind decides whether it adds to or takes from the Balance.
+              - column:
+                  name: amount_minor
+                  type: bigint
+                  constraints:
+                    nullable: false
+              # A calendar date with no time and no timezone (AD-1). The `pg` driver is configured to hand it back
+              # as the exact 'YYYY-MM-DD' string — never a JS Date, which would shift the day by the process timezone.
+              - column:
+                  name: occurred_on
+                  type: date
+                  constraints:
+                    nullable: false
+              - column:
+                  name: note
+                  type: text
+              - column:
+                  name: created_at
+                  type: timestamptz
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamptz
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+        # RESTRICT: Wallets are archived, never deleted (A-9), so a Transaction can never lose its Wallet.
+        - addForeignKeyConstraint:
+            baseTableName: transactions
+            baseColumnNames: wallet_id
+            constraintName: transactions_wallet_id_fkey
+            referencedTableName: wallets
+            referencedColumnNames: id
+            onDelete: RESTRICT
+        # Defence in depth behind the API's validation.
+        - sql:
+            sql: ALTER TABLE transactions ADD CONSTRAINT transactions_kind_valid CHECK (kind IN ('income', 'expense'))
+        - sql:
+            sql: ALTER TABLE transactions ADD CONSTRAINT transactions_amount_minor_positive CHECK (amount_minor > 0)
+        - sql:
+            sql: ALTER TABLE transactions ADD CONSTRAINT transactions_note_length CHECK (char_length(note) <= 200)
+        # A Wallet's Transactions newest first: occurred_on desc, then newest created_at (Lists convention).
+        - createIndex:
+            tableName: transactions
+            indexName: transactions_wallet_id_occurred_on_created_at_idx
+            columns:
+              - column:
+                  name: wallet_id
+              - column:
+                  name: occurred_on
+                  descending: true
+              - column:
+                  name: created_at
+                  descending: true
+      rollback:
+        - dropTable:
+            tableName: transactions

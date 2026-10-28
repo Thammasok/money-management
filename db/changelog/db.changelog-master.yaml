@@ -12,3 +12,11 @@ databaseChangeLog:
   - include:
       file: F-1/004-seed-test-user.yaml
       relativeToChangelogFile: true
+  # Ledger (F-2): wallets and transactions. Schema only — no seed (every test creates its own User and Wallets),
+  # and no context, so the production `prod` run applies them too.
+  - include:
+      file: F-2/001-wallets.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: F-2/002-transactions.yaml
+      relativeToChangelogFile: true

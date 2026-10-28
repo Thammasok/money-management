@@ -138,6 +138,11 @@ function (config) {
     return d <= days;
   }
   function absBig(v) { return v < BigInt(0) ? -v : v; }
+  // Text as the real DTO stores it: NUL characters dropped (Postgres cannot store them), then trimmed.
+  function cleanText(value) { return String(value).split('\u0000').join('').trim(); }
+  // Characters as Postgres char_length counts them — code points, so a surrogate pair is ONE character
+  // (backend/src/ledger/validation/character-count.ts). String.length would count UTF-16 units.
+  function characterCount(text) { return Array.from(text).length; }
 
   function walletBalance(wallet) {
     var balance = BigInt(wallet.openingBalanceMinor);
@@ -233,10 +238,12 @@ function (config) {
   // POST /api/v1/wallets — DTO order: name, currency, openingBalanceMinor
   if (route === 'createWallet') {
     var wMessages = [];
-    var name = typeof parsed.name === 'string' ? parsed.name.trim() : null;
+    var name = typeof parsed.name === 'string' ? cleanText(parsed.name) : null;
     if (name === null || name.length === 0) { wMessages.push(MSG.walletName); }
-    else if (name.length > 60) { wMessages.push(MSG.walletNameLength); }
-    if (!findCurrency(parsed.currency)) { wMessages.push(MSG.currency); }
+    else if (characterCount(name) > 60) { wMessages.push(MSG.walletNameLength); }
+    // The DTO only checks that the Currency is a string; WHICH Currencies are supported is asked of Exchange
+    // Rates by the service, after the DTO passed (so a request with other mistakes gets only those messages).
+    if (typeof parsed.currency !== 'string') { wMessages.push(MSG.currency); }
     var opening = parsed.openingBalanceMinor;
     var openingValue = null;
     if (typeof opening !== 'string' || !/^-?[0-9]+$/.test(opening)) { wMessages.push(MSG.openingBalance); }
@@ -244,6 +251,7 @@ function (config) {
       openingValue = BigInt(opening);
       if (absBig(openingValue) > MAX_MINOR) { wMessages.push(MSG.openingBalanceTooLarge); }
     }
+    if (!wMessages.length && !findCurrency(parsed.currency)) { wMessages.push(MSG.currency); }
     if (wMessages.length) { return error(400, wMessages, 'Bad Request', cookie); }
     var created = nowIso();
     var wallet = {
@@ -289,8 +297,8 @@ function (config) {
     else if (todayValid && parsed.occurredOn > parsed.today) { tMessages.push(MSG.futureDate); }
     var note = null;
     if (parsed.note !== undefined && parsed.note !== null) {
-      if (typeof parsed.note !== 'string' || parsed.note.trim().length > 200) { tMessages.push(MSG.note); }
-      else { note = parsed.note.trim() === '' ? null : parsed.note.trim(); }
+      if (typeof parsed.note !== 'string' || characterCount(cleanText(parsed.note)) > 200) { tMessages.push(MSG.note); }
+      else { note = cleanText(parsed.note) === '' ? null : cleanText(parsed.note); }
     }
     if (!todayValid) { tMessages.push(MSG.today); }
     if (tMessages.length) { return error(400, tMessages, 'Bad Request', cookie); }

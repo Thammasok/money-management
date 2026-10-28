@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import { Pool } from 'pg';
+import type { Pool } from 'pg';
+import { createPool } from '../../src/database/create-pool';
 
 /**
  * The docker-compose.backing-service.yml database with the Liquibase `test` context applied (`npm run db:up`).
@@ -9,8 +10,9 @@ import { Pool } from 'pg';
 export const TEST_DATABASE_URL =
   process.env.TEST_DATABASE_URL ?? 'postgresql://test:test@localhost:15432/money_management_test';
 
+/** A small Pool built the production way (`createPool`), so tests read Postgres exactly as the app does. */
 export function createTestPool(): Pool {
-  return new Pool({ connectionString: TEST_DATABASE_URL, max: 2 });
+  return createPool(TEST_DATABASE_URL, { max: 2 });
 }
 
 /**
@@ -31,4 +33,16 @@ export async function storeFailedSignIn(
 /** A fresh lower-case email: every test owns its data, so tests never depend on each other or on earlier runs. */
 export function uniqueEmail(prefix: string): string {
   return `${prefix}-${randomUUID().slice(0, 8)}@example.test`;
+}
+
+/**
+ * Stores a User directly and returns its id — for tests that need a Wallet owner. Inserted with SQL because the
+ * Ledger never creates Users (Identity owns them); the hash is a placeholder nobody signs in with.
+ */
+export async function insertUser(pool: Pool, prefix = 'owner'): Promise<string> {
+  const { rows } = await pool.query<{ id: string }>(
+    'INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id',
+    [uniqueEmail(prefix), '$argon2id$placeholder-hash-nobody-signs-in-with'],
+  );
+  return rows[0].id;
 }

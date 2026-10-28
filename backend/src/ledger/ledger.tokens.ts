@@ -1,0 +1,2 @@
+export const LEDGER_SERVICE = Symbol('LEDGER_SERVICE');
+export const LEDGER_REPOSITORY = Symbol('LEDGER_REPOSITORY');

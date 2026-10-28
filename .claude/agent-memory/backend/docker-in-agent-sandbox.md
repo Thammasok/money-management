@@ -17,3 +17,13 @@ metadata:
 - Reproduce the Stop unit gate without touching its retry file: `python3 -c "import subprocess; r = subprocess.run(['npx','jest','--no-coverage','--maxWorkers=2'], cwd='/abs/backend', capture_output=True, text=True); print(r.returncode, (r.stdout+r.stderr)[-1500:])"`.
 - `docker compose … down -v` skips profile services: after a Mountebank check use `--profile mock down -v` too, or a stopped `money-management-mountebank-1` container lingers.
 - zsh globs unquoted `--include=*.ts` in `grep` and errors; pass explicit directories instead (no Grep/Glob tools in the backend agent).
+- `ps` is not permitted in the sandbox. To see what owns a port: `lsof -nP -iTCP:3000 -sTCP:LISTEN`, then `lsof -a -p <pid> -d cwd`. Stop your own background server with TaskStop `<task id>` (never `kill`), then re-check with `lsof`.
+- **After a usage-limit interruption**, check before anything else: `docker compose -f … ps -a` and `lsof` on 3000/15432/2525/4545/5173. A backend started earlier keeps serving a STALE build — stop it and rebuild before trusting any result. A leftover Postgres container of ours can simply be reused.
+- Monitor and TaskStop are deferred tools: load them once with `ToolSearch select:Monitor,TaskStop`. Readiness wait = Monitor on `until curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/api/v1/me | grep -q 401; do sleep 1; done; echo ready` (and `…/imposters/4545` → 200 for Mountebank). A quick `curl` after the notification is a cheap double-check; do not arm throwaway Monitors.
+- One Bruno folder: `npm --prefix <root> run api:test:integration:F-2 -- 02-walking-skeleton` (npm appends the path). A full run prints ~350 lines per collection — unavoidable, budget for it (3–4 full runs per feature).
+- `npm --prefix backend run format` rewrites only files that differ (safe); run it, then `format:check`.
+- Jest integration specs share ONE persistent database across runs: never use fixed ids or emails (a failed first run leaves rows that break the re-run). For ordering tie-break tests use `randomUUID().slice(0, 35) + '1' | '2' | '3'`.
+- Nest logs a rejected oversized body (413) as ERROR with a stack — silence it inside the one test: `jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined)`, restore right after the Act.
+- `process.env.TZ = 'Asia/Bangkok'` assigned at runtime works on Node 26 for timezone tests (restore in `afterEach`).
+- Editing a YAML *comment* in an applied Liquibase changeset does not change its checksum (`run --rm … migrations` → "Previously run: N, Run: 0").
+- A fresh `docker compose down -v` + `up -d --wait` cycle takes ~20 s and the images are cached; do the "wipe and run again" repeatability check for real rather than reasoning about it.

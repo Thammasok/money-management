@@ -1,0 +1,80 @@
+databaseChangeLog:
+  - changeSet:
+      id: F-2-001-create-wallets
+      author: backend-track
+      changes:
+        # A Wallet belongs to exactly one User (its owner) and holds one Currency, fixed at creation (AD-2).
+        # Its Balance is never a column: it is derived on read from `opening_balance_minor` and the Transactions.
+        # Not here yet (later features add them): archived_at (F-3).
+        - createTable:
+            tableName: wallets
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  defaultValueComputed: gen_random_uuid()
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: wallets_pkey
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: name
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: currency
+                  type: char(3)
+                  constraints:
+                    nullable: false
+              # Minor units of the Wallet's Currency (THB/USD 2 digits, JPY 0). Zero and negative are allowed:
+              # an Opening Balance is not Income, and a Wallet may start in debt.
+              - column:
+                  name: opening_balance_minor
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamptz
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamptz
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+        # RESTRICT: Users are never deleted (and their Wallets never are either, A-9) — if that ever changes,
+        # the database must refuse to orphan money data rather than cascade it away.
+        - addForeignKeyConstraint:
+            baseTableName: wallets
+            baseColumnNames: user_id
+            constraintName: wallets_user_id_fkey
+            referencedTableName: users
+            referencedColumnNames: id
+            onDelete: RESTRICT
+        # Defence in depth behind the API's validation (the API trims the name and checks the Currency list).
+        - sql:
+            sql: ALTER TABLE wallets ADD CONSTRAINT wallets_name_length CHECK (char_length(name) BETWEEN 1 AND 60)
+        - sql:
+            sql: ALTER TABLE wallets ADD CONSTRAINT wallets_currency_code CHECK (currency ~ '^[A-Z]{3}$')
+        # "My Wallets, newest first" (GET /wallets) and the Currency of the last-created Wallet (Q-11).
+        - createIndex:
+            tableName: wallets
+            indexName: wallets_user_id_created_at_idx
+            columns:
+              - column:
+                  name: user_id
+              - column:
+                  name: created_at
+                  descending: true
+      rollback:
+        - dropTable:
+            tableName: wallets
