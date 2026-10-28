@@ -1,0 +1,51 @@
+databaseChangeLog:
+  - changeSet:
+      id: F-1-001-create-users
+      author: backend-track
+      changes:
+        - createTable:
+            tableName: users
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  defaultValueComputed: gen_random_uuid()
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: users_pkey
+                    nullable: false
+              - column:
+                  name: email
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: password_hash
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamptz
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamptz
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+        # The unique constraint is what turns a second sign-up with the same email into a 409
+        # (the repository maps Postgres error 23505 on `users_email_key`) — no check-then-insert race.
+        - addUniqueConstraint:
+            tableName: users
+            columnNames: email
+            constraintName: users_email_key
+        # Emails are stored trimmed and lower-cased by Identity; the database refuses anything else, so
+        # "unique" really means case-insensitively unique.
+        - sql:
+            sql: ALTER TABLE users ADD CONSTRAINT users_email_lower_case CHECK (email = lower(email))
+      rollback:
+        - dropTable:
+            tableName: users

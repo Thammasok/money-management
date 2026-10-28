@@ -1,0 +1,29 @@
+databaseChangeLog:
+  - changeSet:
+      id: F-1-004-seed-test-user
+      author: backend-track
+      # Seed data lives only in the `test` context (db:reset / docker-compose.backing-service.yml apply it).
+      context: test
+      comment: >-
+        The one seeded User, used by the sign-in scenarios that prove a Liquibase-seeded argon2id hash
+        verifies through the real code path (S-2 / AT-04-01 / UT-7). Email seed.user@example.test,
+        password Seed-Pass-1. The hash was computed once with the app's hasher parameters
+        (argon2id, m=19456, t=2, p=1). The id is fixed so the Mountebank impostor and the E2E fixtures agree.
+        Nothing may fail or pause this User's sign-in (03-scenarios.md, "Rule for later features").
+      changes:
+        - insert:
+            tableName: users
+            columns:
+              - column:
+                  name: id
+                  value: '0f100000-0000-4000-8000-000000000001'
+              - column:
+                  name: email
+                  value: 'seed.user@example.test'
+              - column:
+                  name: password_hash
+                  value: '$argon2id$v=19$m=19456,t=2,p=1$6KuxlmzqGPtNLQKAF0TAsQ$LNEtZHPZ2zuofcvZV7SXcQJXPEr36Suf1vTXxheY2bs'
+      rollback:
+        - delete:
+            tableName: users
+            where: id = '0f100000-0000-4000-8000-000000000001'

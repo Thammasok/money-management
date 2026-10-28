@@ -4,3 +4,7 @@ playwright-report/
 blob-report/
 mb.pid
 mb.log
+# app build output and coverage (backend/, frontend/)
+dist/
+coverage/
+*.tsbuildinfo

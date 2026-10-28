@@ -117,6 +117,16 @@ function (config) {
   var method = String(req.method || '').toUpperCase();
   var path = String(req.path || '').replace(/\/+$/, '') || '/';
 
+  // The real service accepts only JSON bodies (415 otherwise) — backend/src/http-security.ts, requireJsonBody.
+  // Without this a Web App that forgets `Content-Type: application/json` (a string body then goes out as
+  // text/plain) would pass in mock mode and fail only against the real backend.
+  if (req.body !== undefined && req.body !== null && req.body !== '') {
+    var contentType = header('content-type');
+    if (!contentType || !/^application\/json\s*(;|$)/i.test(String(contentType).trim())) {
+      return error(415, 'Content-Type must be application/json', 'Unsupported Media Type');
+    }
+  }
+
   // POST /api/v1/users — sign up
   if (method === 'POST' && path === '/api/v1/users') {
     var b = body();

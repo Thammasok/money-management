@@ -135,3 +135,13 @@ erDiagram
 - Physical names follow the conventions: tables `users`, `sessions`, `sign_in_attempts`, `wallets`,
   `wallet_shares`, `transactions`, `categories`, `transfers`, `exchange_rates`; columns snake_case
   (`wallet_id`, `amount_minor`, `occurred_on`, …).
+
+## Deferred Relationships
+
+> Relationships the diagram shows whose target entity did not exist yet when the owning feature built its
+> table. Maintained by `/project:create-seed-data` (Stage 9): a feature adds the missing foreign key in a
+> NEW changeset once it creates the target, then removes the entry here.
+
+_None pending._ F-1 created `users`, `sessions` and `sign_in_attempts` together, so `sessions.user_id -> users.id`
+was completed in the same changeset set. Later features' references to `users` are created with their own tables
+(the target already exists).

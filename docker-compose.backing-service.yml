@@ -1,0 +1,70 @@
+# Backing services for local development, backend integration tests (Stage 13) and E2E (Stage 25).
+# Postgres + Liquibase are REAL here (Data Access is tested against a real database); Mountebank only
+# stands in for this project's own /api/v1 in mock runs (and, from F-10, for the Frankfurter rate API).
+#
+#   npm run db:up      start Postgres, apply the Liquibase changelog (contexts: test), wait until ready
+#   npm run db:reset   re-apply the changelog with LIQUIBASE_CONTEXTS (default: test) — idempotent
+#   npm run db:down    stop everything and DELETE the database volume (clean slate)
+#
+# Test credentials only — local docker, never used outside this file.
+name: money-management
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: money_management_test
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+    ports:
+      # 15432 on the host by default: 5432/5433 are routinely taken by a locally installed Postgres or by other
+      # projects' stacks, and a clash fails an unattended run. Override with POSTGRES_PORT. Inside the compose
+      # network (what Liquibase uses) it is always 5432.
+      - "${POSTGRES_PORT:-15432}:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test -d money_management_test"]
+      interval: 3s
+      timeout: 5s
+      retries: 20
+
+  # One-shot: applies db/changelog (schema + the `test` seed context by default), then exits 0.
+  # `npm run db:reset` runs it again on demand.
+  migrations:
+    image: liquibase/liquibase:4.31
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      LIQUIBASE_ANALYTICS_ENABLED: "false"
+    volumes:
+      - ./db/changelog:/liquibase/changelog:ro
+    command: >
+      --url=jdbc:postgresql://postgres:5432/money_management_test
+      --username=test
+      --password=test
+      --changelog-file=changelog/db.changelog-master.yaml
+      --contexts=${LIQUIBASE_CONTEXTS:-test}
+      update
+
+  # Own-API impostor for mock-mode runs (Stage 21/23). Opt-in: `docker compose -f … --profile mock up -d mountebank`.
+  # (`npm run mocks:start` runs the same config with the npm-installed `mb`; use one or the other, not both —
+  # they share ports 2525 and 4545.)
+  mountebank:
+    profiles: ["mock"]
+    image: bbyars/mountebank:2.9.1
+    ports:
+      - "2525:2525"
+      - "4545:4545"
+    volumes:
+      - ./mocks:/mocks:ro
+    command: --configfile /mocks/imposters.json --allowInjection
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:2525/ || exit 1"]
+      interval: 3s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  db-data:

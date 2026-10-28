@@ -1,0 +1,32 @@
+databaseChangeLog:
+  - changeSet:
+      id: F-1-003-create-sign-in-attempts
+      author: backend-track
+      changes:
+        # One row per failed sign-in. Deliberately no primary key and no foreign key: rows are only counted
+        # and deleted by email, and an email that belongs to no User is counted too (no email enumeration).
+        - createTable:
+            tableName: sign_in_attempts
+            columns:
+              - column:
+                  name: email
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: attempted_at
+                  type: timestamptz
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+        - createIndex:
+            tableName: sign_in_attempts
+            indexName: sign_in_attempts_email_attempted_at_idx
+            columns:
+              - column:
+                  name: email
+              - column:
+                  name: attempted_at
+      rollback:
+        - dropTable:
+            tableName: sign_in_attempts

@@ -1,0 +1,44 @@
+databaseChangeLog:
+  - changeSet:
+      id: F-1-002-create-sessions
+      author: backend-track
+      changes:
+        # `id` is the random token carried by the session cookie — not a UUID (epic: Identity key exceptions).
+        - createTable:
+            tableName: sessions
+            columns:
+              - column:
+                  name: id
+                  type: text
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: sessions_pkey
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    foreignKeyName: sessions_user_id_fkey
+                    references: users(id)
+                    deleteCascade: true
+              - column:
+                  name: expires_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamptz
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+        - createIndex:
+            tableName: sessions
+            indexName: sessions_user_id_idx
+            columns:
+              - column:
+                  name: user_id
+      rollback:
+        - dropTable:
+            tableName: sessions

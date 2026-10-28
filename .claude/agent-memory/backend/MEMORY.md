@@ -1,0 +1,3 @@
+- [NestJS 11, not 12 — Jest/ESM](nestjs-version-jest-esm.md) — v12 is ESM-only and Jest can't load it without an experimental flag; also ts-jest/TS7/isolatedModules pitfalls
+- [Docker in the agent sandbox](docker-in-agent-sandbox.md) — only `docker …` commands are sandbox-excluded; Postgres host port is 15432 (the user's other stacks use 5432/5433/3000); backend/Bruno/gate recipes
+- [Session cookie & HTTP gotchas](session-cookie-and-http-gotchas.md) — Max-Age=0 on Express 5, one-message validation, 409 via unique violation, DB-time rules, throttle burst lock, JSON-only bodies, impostor parity

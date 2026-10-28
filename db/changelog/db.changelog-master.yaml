@@ -1,0 +1,14 @@
+databaseChangeLog:
+  # Identity (F-1): users, sessions, sign-in attempts, plus the one seeded test User.
+  - include:
+      file: F-1/001-users.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: F-1/002-sessions.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: F-1/003-sign-in-attempts.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: F-1/004-seed-test-user.yaml
+      relativeToChangelogFile: true
