@@ -1,0 +1,19 @@
+meta {
+  name: AT-01-03 sign out without cookie
+  type: http
+  seq: 3
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/sessions/current
+  body: none
+  auth: none
+}
+
+tests {
+  // S-22 — sign-out is a protected endpoint
+  test("401 Not signed in.", function () {
+    expect(res.getStatus()).to.equal(401);
+    expect(res.getBody().message).to.equal("Not signed in.");
+  });
+}

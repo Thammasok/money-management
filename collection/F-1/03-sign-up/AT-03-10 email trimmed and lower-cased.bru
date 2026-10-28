@@ -1,0 +1,26 @@
+meta {
+  name: AT-03-10 email trimmed and lower-cased
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{baseUrl}}/api/v1/users
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "  Mixed-{{runIdUpper}}@Example.TEST  ",
+    "password": "{{validPassword}}"
+  }
+}
+
+tests {
+  // S-5 — stored and returned trimmed + lower-cased
+  test("201 with the normalised email", function () {
+    expect(res.getStatus()).to.equal(201);
+    expect(res.getBody().email).to.equal("mixed-" + bru.getVar("runId") + "@example.test");
+  });
+}

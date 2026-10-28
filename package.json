@@ -1,0 +1,21 @@
+{
+  "name": "money-management-acceptance",
+  "private": true,
+  "description": "Repo-root acceptance tooling only: Playwright E2E (e2e/), Bruno API tests (collection/), Mountebank impostors (mocks/). The apps keep their own package.json in backend/ and frontend/.",
+  "scripts": {
+    "mocks:build": "node mocks/build-imposters.mjs",
+    "mocks:start": "mb start --configfile mocks/imposters.json --allowInjection --port 2525",
+    "mocks:stop": "mb stop",
+    "api:test:mock": "cd collection/F-1 && bru run -r --env mock --disable-cookies",
+    "api:test:integration": "cd collection/F-1 && bru run -r --env integration --disable-cookies",
+    "e2e:list": "playwright test --list",
+    "e2e:typecheck": "tsc -p e2e/tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "@types/node": "^26.6.5",
+    "@usebruno/cli": "^4.3.0",
+    "mountebank": "^2.9.1",
+    "typescript": "^7.0.2"
+  }
+}

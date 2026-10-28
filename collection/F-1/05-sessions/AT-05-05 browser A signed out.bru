@@ -1,0 +1,23 @@
+meta {
+  name: AT-05-05 browser A signed out
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/api/v1/me
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidA}}
+}
+
+tests {
+  // S-4 / S-23 — Session A is gone
+  test("401 for Session A", function () {
+    expect(res.getStatus()).to.equal(401);
+    expect(res.getBody().message).to.equal("Not signed in.");
+  });
+}

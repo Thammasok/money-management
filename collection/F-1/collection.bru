@@ -1,0 +1,21 @@
+meta {
+  name: F-1 Sign Up and Sign In
+}
+
+script:pre-request {
+  // One unique token per collection run: every test creates its own Users with
+  // `{prefix}-{{runId}}@example.test`, so runs never collide on a shared database
+  // and no test depends on another test's leftovers (03-scenarios.md → Test Data).
+  if (!bru.getVar("runId")) {
+    const runId = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    bru.setVar("runId", runId);
+    bru.setVar("runIdUpper", runId.toUpperCase());
+  }
+}
+
+docs {
+  Acceptance-contract API suite for F-1 (artifacts/F-1/06-api-test-plan.md).
+  Run from this folder with cookies DISABLED — every request sends its session explicitly:
+    bru run --env mock --disable-cookies          (Stage 7: Mountebank impostor on :4545)
+    bru run --env integration --disable-cookies   (Stage 13: NestJS on :3000 + Postgres)
+}

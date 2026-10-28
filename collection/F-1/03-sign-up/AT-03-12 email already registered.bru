@@ -1,0 +1,30 @@
+meta {
+  name: AT-03-12 email already registered
+  type: http
+  seq: 12
+}
+
+post {
+  url: {{baseUrl}}/api/v1/users
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "TAKEN-{{runIdUpper}}@example.test",
+    "password": "{{validPassword}}"
+  }
+}
+
+tests {
+  // S-14 — the same email in another letter case is taken
+  test("409 This email is already registered.", function () {
+    expect(res.getStatus()).to.equal(409);
+    expect(res.getBody()).to.deep.equal({ statusCode: 409, message: "This email is already registered.", error: "Conflict" });
+  });
+  test("no session cookie issued", function () {
+    const raw = [].concat(res.getHeader("set-cookie") || []).join("; ");
+    expect(raw).to.not.match(/sid=[A-Za-z0-9_-]+/);
+  });
+}

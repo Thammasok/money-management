@@ -1,0 +1,26 @@
+meta {
+  name: AT-06-04 refused attempt not stored
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/api/v1/sessions
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "locked-{{runId}}@example.test",
+    "password": "{{wrongPassword}}"
+  }
+}
+
+tests {
+  // S-19 / Q-42 — a refused attempt is not stored, so the pause is fixed: same retryAt as before
+  test("429 with the same retryAt", function () {
+    expect(res.getStatus()).to.equal(429);
+    expect(res.getBody().retryAt).to.equal(bru.getVar("retryAtLocked"));
+  });
+}

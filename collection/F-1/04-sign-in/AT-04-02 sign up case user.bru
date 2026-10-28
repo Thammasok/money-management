@@ -1,0 +1,29 @@
+meta {
+  name: AT-04-02 sign up case user
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/v1/users
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "case-{{runId}}@example.test",
+    "password": "{{validPassword}}"
+  }
+}
+
+script:post-response {
+  bru.setVar("userIdCase", res.getBody() && res.getBody().id);
+}
+
+tests {
+  // S-6 / S-17 setup
+  test("201", function () {
+    expect(res.getStatus()).to.equal(201);
+  });
+}

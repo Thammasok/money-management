@@ -1,0 +1,23 @@
+meta {
+  name: AT-01-02 me with unknown session
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/v1/me
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid=does-not-exist
+}
+
+tests {
+  // S-22 — a cookie that matches no Session is refused
+  test("401 Not signed in.", function () {
+    expect(res.getStatus()).to.equal(401);
+    expect(res.getBody().message).to.equal("Not signed in.");
+  });
+}

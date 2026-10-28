@@ -1,0 +1,44 @@
+meta {
+  name: AT-06-11 cleared failures do not count
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{baseUrl}}/api/v1/sessions
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "clears-{{runId}}@example.test",
+    "password": "{{wrongPassword}}"
+  }
+}
+
+script:pre-request {
+  // 9 more failures. If AT-06-10's success had NOT cleared the earlier 9, there would now be
+  // 18 failures in the window and this request would be refused with 429.
+  const email = "clears-" + bru.getVar("runId") + "@example.test";
+  for (let i = 1; i <= 9; i++) {
+    // Callback form: in the safe (QuickJS) sandbox only this form normalises a non-2xx into err.status.
+    let status;
+    await bru.sendRequest({
+      method: "POST",
+      url: bru.getEnvVar("baseUrl") + "/api/v1/sessions",
+      headers: { "Content-Type": "application/json" },
+      data: { email: email, password: bru.getEnvVar("wrongPassword") }
+    }, function (err, r) {
+      status = err ? (err.status || JSON.stringify(err).slice(0, 300)) : r.status;
+    });
+    if (status !== 401) { throw new Error("setup failure #" + i + " expected 401, got " + status); }
+  }
+}
+
+tests {
+  // S-9 — a successful sign-in clears earlier failures: this is only the 10th counted failure
+  test("401, not 429", function () {
+    expect(res.getStatus()).to.equal(401);
+  });
+}

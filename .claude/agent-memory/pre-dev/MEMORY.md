@@ -1,0 +1,2 @@
+- [Bruno/Mountebank quirks](bruno-mountebank-quirks.md) — Stage 7 pitfalls: bru cwd, --disable-cookies, sendRequest callback form, stateful injection
+- [E2E mode via proxy](e2e-mode-via-proxy.md) — mock vs integration chosen by Vite API_PROXY_TARGET; unique emails; seeded User; F-1 helpers

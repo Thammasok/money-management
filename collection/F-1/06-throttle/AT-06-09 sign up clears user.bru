@@ -1,0 +1,25 @@
+meta {
+  name: AT-06-09 sign up clears user
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{baseUrl}}/api/v1/users
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "clears-{{runId}}@example.test",
+    "password": "{{validPassword}}"
+  }
+}
+
+tests {
+  // S-9 setup
+  test("201", function () {
+    expect(res.getStatus()).to.equal(201);
+  });
+}

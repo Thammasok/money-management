@@ -1,0 +1,28 @@
+meta {
+  name: AT-04-06 missing fields
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/api/v1/sessions
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "",
+    "password": ""
+  }
+}
+
+tests {
+  // Sign-in validation — empty fields are a 400, not a counted failure
+  test("400 with both sign-in messages", function () {
+    expect(res.getStatus()).to.equal(400);
+    const messages = [].concat(res.getBody().message);
+    expect(messages).to.include("Enter your email.");
+    expect(messages).to.include("Enter your password.");
+  });
+}

@@ -1,0 +1,43 @@
+meta {
+  name: AT-06-07 unknown email tenth failure
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/api/v1/sessions
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "nobody-{{runId}}@example.test",
+    "password": "{{wrongPassword}}"
+  }
+}
+
+script:pre-request {
+  // Failures 1–9 for an email no User has.
+  const email = "nobody-" + bru.getVar("runId") + "@example.test";
+  for (let i = 1; i <= 9; i++) {
+    // Callback form: in the safe (QuickJS) sandbox only this form normalises a non-2xx into err.status.
+    let status;
+    await bru.sendRequest({
+      method: "POST",
+      url: bru.getEnvVar("baseUrl") + "/api/v1/sessions",
+      headers: { "Content-Type": "application/json" },
+      data: { email: email, password: bru.getEnvVar("wrongPassword") }
+    }, function (err, r) {
+      status = err ? (err.status || JSON.stringify(err).slice(0, 300)) : r.status;
+    });
+    if (status !== 401) { throw new Error("setup failure #" + i + " expected 401, got " + status); }
+  }
+}
+
+tests {
+  // S-20 — unknown emails are counted too
+  test("10th failure is 401", function () {
+    expect(res.getStatus()).to.equal(401);
+  });
+}

@@ -1,0 +1,33 @@
+meta {
+  name: AT-05-02 sign in in browser B
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/v1/sessions
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "two-{{runId}}@example.test",
+    "password": "{{validPassword}}"
+  }
+}
+
+script:post-response {
+  const raw = [].concat(res.getHeader("set-cookie") || []).join("; ");
+  const m = raw.match(/sid=([^;]*)/);
+  bru.setVar("sidB", m ? m[1] : "");
+}
+
+tests {
+  // S-4 setup — Session B, distinct from A
+  test("200 with a second, different session", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(bru.getVar("sidB")).to.not.equal("");
+    expect(bru.getVar("sidB")).to.not.equal(bru.getVar("sidA"));
+  });
+}

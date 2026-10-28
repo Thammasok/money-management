@@ -1,0 +1,26 @@
+meta {
+  name: AT-06-06 other email unaffected
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/api/v1/sessions
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "free-{{runId}}@example.test",
+    "password": "{{validPassword}}"
+  }
+}
+
+tests {
+  // S-11 — while locked-{{runId}} is paused, another email signs in normally
+  test("200", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().email).to.equal("free-" + bru.getVar("runId") + "@example.test");
+  });
+}

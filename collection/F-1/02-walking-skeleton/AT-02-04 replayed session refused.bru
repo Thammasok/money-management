@@ -1,0 +1,23 @@
+meta {
+  name: AT-02-04 replayed session refused
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/v1/me
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidSkeleton}}
+}
+
+tests {
+  // S-23 — the signed-out Session cannot be replayed
+  test("401 Not signed in.", function () {
+    expect(res.getStatus()).to.equal(401);
+    expect(res.getBody().message).to.equal("Not signed in.");
+  });
+}

@@ -1,0 +1,25 @@
+meta {
+  name: AT-06-01 sign up locked user
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/users
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "locked-{{runId}}@example.test",
+    "password": "{{validPassword}}"
+  }
+}
+
+tests {
+  // S-10 / S-19 setup — a dedicated, disposable email (never the seeded User)
+  test("201", function () {
+    expect(res.getStatus()).to.equal(201);
+  });
+}

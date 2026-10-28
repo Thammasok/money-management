@@ -1,0 +1,29 @@
+meta {
+  name: AT-04-03 email letter case ignored
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/v1/sessions
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": " CASE-{{runIdUpper}}@EXAMPLE.test ",
+    "password": "{{validPassword}}"
+  }
+}
+
+tests {
+  // S-6 — sign-in ignores letter case and surrounding spaces; same User id as sign-up
+  test("200 with the same User, email lower-cased", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody()).to.deep.equal({
+      id: bru.getVar("userIdCase"),
+      email: "case-" + bru.getVar("runId") + "@example.test"
+    });
+  });
+}

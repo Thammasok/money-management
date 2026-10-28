@@ -1,0 +1,32 @@
+meta {
+  name: AT-05-01 sign up in browser A
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/users
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "two-{{runId}}@example.test",
+    "password": "{{validPassword}}"
+  }
+}
+
+script:post-response {
+  const raw = [].concat(res.getHeader("set-cookie") || []).join("; ");
+  const m = raw.match(/sid=([^;]*)/);
+  bru.setVar("sidA", m ? m[1] : "");
+}
+
+tests {
+  // S-4 setup — Session A
+  test("201", function () {
+    expect(res.getStatus()).to.equal(201);
+    expect(bru.getVar("sidA")).to.not.equal("");
+  });
+}

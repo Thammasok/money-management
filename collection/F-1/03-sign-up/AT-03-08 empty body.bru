@@ -1,0 +1,28 @@
+meta {
+  name: AT-03-08 empty body
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/api/v1/users
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "",
+    "password": ""
+  }
+}
+
+tests {
+  // S-15 (empty password) / S-16 boundary — both fields empty: both messages
+  test("400 with both messages", function () {
+    expect(res.getStatus()).to.equal(400);
+    const messages = [].concat(res.getBody().message);
+    expect(messages).to.include("Enter a valid email address.");
+    expect(messages).to.include("Password must be at least 8 characters and include a letter, a number, and a symbol.");
+  });
+}

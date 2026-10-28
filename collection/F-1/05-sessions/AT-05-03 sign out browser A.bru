@@ -1,0 +1,22 @@
+meta {
+  name: AT-05-03 sign out browser A
+  type: http
+  seq: 3
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/sessions/current
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidA}}
+}
+
+tests {
+  // S-4 — sign out Session A
+  test("204", function () {
+    expect(res.getStatus()).to.equal(204);
+  });
+}

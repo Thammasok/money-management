@@ -1,0 +1,31 @@
+meta {
+  name: AT-02-02 me signed in
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/v1/me
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidSkeleton}}
+}
+
+tests {
+  // S-1 ⭐ — the session from sign-up identifies the same User; S-13 sliding: cookie re-sent
+  test("200 with the signed-up User", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody()).to.deep.equal({
+      id: bru.getVar("userIdSkeleton"),
+      email: "skel-" + bru.getVar("runId") + "@example.test"
+    });
+  });
+  test("cookie re-sent with a fresh 30-day Max-Age", function () {
+    const raw = [].concat(res.getHeader("set-cookie") || []).join("; ");
+    expect(raw).to.include("sid=" + bru.getVar("sidSkeleton"));
+    expect(raw).to.include("Max-Age=2592000");
+  });
+}

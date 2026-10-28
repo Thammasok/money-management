@@ -1,0 +1,31 @@
+meta {
+  name: AT-04-01 seeded user signs in
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/sessions
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "{{seedEmail}}",
+    "password": "{{seedPassword}}"
+  }
+}
+
+tests {
+  // S-2 — a Liquibase-seeded argon2id hash verifies through the real code path (integration mode)
+  test("200 with the seeded User", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody()).to.deep.equal({ id: bru.getEnvVar("seedUserId"), email: bru.getEnvVar("seedEmail") });
+  });
+  test("session cookie issued", function () {
+    const raw = [].concat(res.getHeader("set-cookie") || []).join("; ");
+    expect(raw).to.match(/sid=[A-Za-z0-9_-]{20,}/);
+    expect(raw).to.include("HttpOnly");
+  });
+}

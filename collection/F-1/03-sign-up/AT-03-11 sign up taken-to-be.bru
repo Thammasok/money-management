@@ -1,0 +1,25 @@
+meta {
+  name: AT-03-11 sign up taken-to-be
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{baseUrl}}/api/v1/users
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "taken-{{runId}}@example.test",
+    "password": "{{validPassword}}"
+  }
+}
+
+tests {
+  // S-14 setup — creates the User AT-03-12 collides with
+  test("201", function () {
+    expect(res.getStatus()).to.equal(201);
+  });
+}

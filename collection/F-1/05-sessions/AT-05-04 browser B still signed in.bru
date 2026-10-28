@@ -1,0 +1,23 @@
+meta {
+  name: AT-05-04 browser B still signed in
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/v1/me
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidB}}
+}
+
+tests {
+  // S-4 — only the current Session ended
+  test("200 for Session B", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().email).to.equal("two-" + bru.getVar("runId") + "@example.test");
+  });
+}

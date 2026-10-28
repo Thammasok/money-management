@@ -1,0 +1,26 @@
+meta {
+  name: AT-06-08 unknown email paused
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/api/v1/sessions
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "nobody-{{runId}}@example.test",
+    "password": "{{validPassword}}"
+  }
+}
+
+tests {
+  // S-20 — an email no User has is paused the same way (no email enumeration)
+  test("429", function () {
+    expect(res.getStatus()).to.equal(429);
+    expect(res.getBody().message).to.equal("Too many failed sign-ins. Try again later.");
+  });
+}

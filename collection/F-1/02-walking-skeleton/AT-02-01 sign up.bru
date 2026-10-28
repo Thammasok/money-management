@@ -1,0 +1,44 @@
+meta {
+  name: AT-02-01 sign up
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/users
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "skel-{{runId}}@example.test",
+    "password": "{{validPassword}}"
+  }
+}
+
+script:post-response {
+  const raw = [].concat(res.getHeader("set-cookie") || []).join("; ");
+  const m = raw.match(/sid=([^;]*)/);
+  bru.setVar("sidSkeleton", m ? m[1] : "");
+  bru.setVar("userIdSkeleton", res.getBody() && res.getBody().id);
+}
+
+tests {
+  // S-1 ⭐ SKELETON — sign up creates a User and signs them in
+  test("201 with the new User", function () {
+    expect(res.getStatus()).to.equal(201);
+    const body = res.getBody();
+    expect(body.id).to.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+    expect(body.email).to.equal("skel-" + bru.getVar("runId") + "@example.test");
+    expect(Object.keys(body).sort()).to.deep.equal(["email", "id"]);
+  });
+  test("session cookie: sid, 30 days, Path=/, HttpOnly, SameSite=Lax", function () {
+    const raw = [].concat(res.getHeader("set-cookie") || []).join("; ");
+    expect(raw).to.match(/sid=[A-Za-z0-9_-]{20,}/);
+    expect(raw).to.include("Max-Age=2592000");
+    expect(raw).to.include("Path=/");
+    expect(raw).to.include("HttpOnly");
+    expect(raw).to.match(/SameSite=Lax/i);
+  });
+}

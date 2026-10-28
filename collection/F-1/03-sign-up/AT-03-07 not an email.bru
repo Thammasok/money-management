@@ -1,0 +1,26 @@
+meta {
+  name: AT-03-07 not an email
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/api/v1/users
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "not-an-email",
+    "password": "{{validPassword}}"
+  }
+}
+
+tests {
+  // S-16 — malformed email
+  test("400 with the email message only", function () {
+    expect(res.getStatus()).to.equal(400);
+    expect([].concat(res.getBody().message)).to.deep.equal(["Enter a valid email address."]);
+  });
+}

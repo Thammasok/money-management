@@ -1,0 +1,25 @@
+meta {
+  name: AT-06-12 new failures pause again
+  type: http
+  seq: 12
+}
+
+post {
+  url: {{baseUrl}}/api/v1/sessions
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "clears-{{runId}}@example.test",
+    "password": "{{validPassword}}"
+  }
+}
+
+tests {
+  // S-9 — the 10 failures since the success do count
+  test("429", function () {
+    expect(res.getStatus()).to.equal(429);
+  });
+}

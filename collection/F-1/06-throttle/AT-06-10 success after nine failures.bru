@@ -1,0 +1,42 @@
+meta {
+  name: AT-06-10 success after nine failures
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{baseUrl}}/api/v1/sessions
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "clears-{{runId}}@example.test",
+    "password": "{{validPassword}}"
+  }
+}
+
+script:pre-request {
+  const email = "clears-" + bru.getVar("runId") + "@example.test";
+  for (let i = 1; i <= 9; i++) {
+    // Callback form: in the safe (QuickJS) sandbox only this form normalises a non-2xx into err.status.
+    let status;
+    await bru.sendRequest({
+      method: "POST",
+      url: bru.getEnvVar("baseUrl") + "/api/v1/sessions",
+      headers: { "Content-Type": "application/json" },
+      data: { email: email, password: bru.getEnvVar("wrongPassword") }
+    }, function (err, r) {
+      status = err ? (err.status || JSON.stringify(err).slice(0, 300)) : r.status;
+    });
+    if (status !== 401) { throw new Error("setup failure #" + i + " expected 401, got " + status); }
+  }
+}
+
+tests {
+  // S-9 — 9 failures then the right password signs in (and, per AT-06-11, clears the 9)
+  test("200", function () {
+    expect(res.getStatus()).to.equal(200);
+  });
+}

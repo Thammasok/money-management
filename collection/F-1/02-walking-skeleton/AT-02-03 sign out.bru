@@ -1,0 +1,28 @@
+meta {
+  name: AT-02-03 sign out
+  type: http
+  seq: 3
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/sessions/current
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidSkeleton}}
+}
+
+tests {
+  // S-1 ⭐ — sign out deletes the Session and clears the cookie
+  test("204 with no body", function () {
+    expect(res.getStatus()).to.equal(204);
+    expect(res.getBody() === "" || res.getBody() === undefined || res.getBody() === null).to.equal(true);
+  });
+  test("cookie cleared", function () {
+    const raw = [].concat(res.getHeader("set-cookie") || []).join("; ");
+    expect(raw).to.match(/sid=;/);
+    expect(raw).to.include("Max-Age=0");
+  });
+}

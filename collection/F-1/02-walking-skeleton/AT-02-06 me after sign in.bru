@@ -1,0 +1,23 @@
+meta {
+  name: AT-02-06 me after sign in
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/api/v1/me
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidSkeleton2}}
+}
+
+tests {
+  // S-1 ⭐ — the sign-in session works
+  test("200 with the User", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().id).to.equal(bru.getVar("userIdSkeleton"));
+  });
+}

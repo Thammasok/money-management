@@ -1,0 +1,44 @@
+meta {
+  name: AT-06-02 tenth failure is still 401
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/v1/sessions
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "locked-{{runId}}@example.test",
+    "password": "{{wrongPassword}}"
+  }
+}
+
+script:pre-request {
+  // Failures 1–9, each must be an ordinary 401.
+  const email = "locked-" + bru.getVar("runId") + "@example.test";
+  for (let i = 1; i <= 9; i++) {
+    // Callback form: in the safe (QuickJS) sandbox only this form normalises a non-2xx into err.status.
+    let status;
+    await bru.sendRequest({
+      method: "POST",
+      url: bru.getEnvVar("baseUrl") + "/api/v1/sessions",
+      headers: { "Content-Type": "application/json" },
+      data: { email: email, password: bru.getEnvVar("wrongPassword") }
+    }, function (err, r) {
+      status = err ? (err.status || JSON.stringify(err).slice(0, 300)) : r.status;
+    });
+    if (status !== 401) { throw new Error("setup failure #" + i + " expected 401, got " + status); }
+  }
+}
+
+tests {
+  // S-10 — the 10th failure itself is an ordinary failure
+  test("401 Email or password is incorrect.", function () {
+    expect(res.getStatus()).to.equal(401);
+    expect(res.getBody().message).to.equal("Email or password is incorrect.");
+  });
+}

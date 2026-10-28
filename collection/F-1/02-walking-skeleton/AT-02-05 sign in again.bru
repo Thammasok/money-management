@@ -1,0 +1,42 @@
+meta {
+  name: AT-02-05 sign in again
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/api/v1/sessions
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "skel-{{runId}}@example.test",
+    "password": "{{validPassword}}"
+  }
+}
+
+script:post-response {
+  const raw = [].concat(res.getHeader("set-cookie") || []).join("; ");
+  const m = raw.match(/sid=([^;]*)/);
+  bru.setVar("sidSkeleton2", m ? m[1] : "");
+}
+
+tests {
+  // S-1 ⭐ — the stored password verifies; same User id as sign-up
+  test("200 with the same User", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody()).to.deep.equal({
+      id: bru.getVar("userIdSkeleton"),
+      email: "skel-" + bru.getVar("runId") + "@example.test"
+    });
+  });
+  test("a new session, not the signed-out one", function () {
+    const raw = [].concat(res.getHeader("set-cookie") || []).join("; ");
+    const m = raw.match(/sid=([^;]*)/);
+    expect(m && m[1]).to.be.a("string").and.not.equal("");
+    expect(m[1]).to.not.equal(bru.getVar("sidSkeleton"));
+    expect(raw).to.include("HttpOnly");
+  });
+}

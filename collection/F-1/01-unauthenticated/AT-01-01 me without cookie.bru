@@ -1,0 +1,19 @@
+meta {
+  name: AT-01-01 me without cookie
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/me
+  body: none
+  auth: none
+}
+
+tests {
+  // S-22 — protected endpoint refuses a request without a Session
+  test("401 Not signed in.", function () {
+    expect(res.getStatus()).to.equal(401);
+    expect(res.getBody()).to.deep.equal({ statusCode: 401, message: "Not signed in.", error: "Unauthorized" });
+  });
+}

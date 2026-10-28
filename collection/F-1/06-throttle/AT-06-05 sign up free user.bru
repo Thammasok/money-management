@@ -1,0 +1,25 @@
+meta {
+  name: AT-06-05 sign up free user
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/api/v1/users
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "free-{{runId}}@example.test",
+    "password": "{{validPassword}}"
+  }
+}
+
+tests {
+  // S-11 setup
+  test("201", function () {
+    expect(res.getStatus()).to.equal(201);
+  });
+}
