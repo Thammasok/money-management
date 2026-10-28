@@ -1,0 +1,170 @@
+/*
+ * Design tokens — the "household ledger" look: warm paper and ink, a bookkeeping green, a serif heading face over a
+ * humanist sans for UI and figures, and the accountant's double rule as the one signature detail.
+ * Direction chosen with ui-ux-pro-max (style / palette / type), vetted with frontend-design (deliberate, not the
+ * stock navy-and-blue fintech look), audited with web-design-guidelines.
+ *
+ * Three layers — components only ever use the semantic names (bg-base-100, text-base-content, btn-primary, …):
+ *   1. primitive  raw palette and type families            @theme static
+ *   2. semantic   daisyUI color roles, one set per scheme  light "ledger" (default) · dark "ledger-night"
+ *                 (prefers-color-scheme picks; both are designed together and contrast-checked)
+ *   3. component  radii, field size, border, depth         --radius-* · --size-* · --border · --depth
+ *
+ * Contrast (WCAG): body and muted text, links, button labels and alert text all clear 4.5:1 in both schemes; form
+ * control borders use base-content at 60% (4.1:1 light, 5.7:1 dark) because daisyUI's 20% default is about 1.4:1.
+ */
+@import 'tailwindcss';
+@plugin 'daisyui' {
+  themes: false;
+}
+
+/* 1 · primitive ------------------------------------------------------------------------------------------------ */
+@theme static {
+  --font-sans: 'Source Sans 3 Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Newsreader Variable', ui-serif, Georgia, serif;
+
+  /* paper and ink (light) */
+  --color-paper-50: #fbf8f0;
+  --color-paper-100: #f2ecdd;
+  --color-paper-200: #e3dac4;
+  --color-ink-900: #1d2621;
+  --color-ink-700: #2a352f;
+  --color-ledger-700: #1f5c46;
+  --color-brass-700: #7a4e0e;
+  --color-brass-500: #c98a1b;
+  --color-brass-950: #2a1c03;
+  --color-brick-700: #a12a1b;
+  --color-brick-50: #fff5f1;
+  --color-sea-700: #1f5f8b;
+  --color-sea-50: #f4fafd;
+  --color-fern-700: #2b6b43;
+  --color-fern-50: #f3fbf5;
+
+  /* lamplight on night (dark) */
+  --color-night-50: #17201b;
+  --color-night-100: #101712;
+  --color-night-200: #26332c;
+  --color-night-700: #2a3730;
+  --color-night-950: #0d1a13;
+  --color-bone-100: #ede6d6;
+  --color-ledger-300: #7cc7a0;
+  --color-brass-300: #e0b160;
+  --color-brass-900: #241705;
+  --color-brick-300: #e4816f;
+  --color-brick-950: #2a0f0a;
+  --color-sea-300: #7fb4d9;
+  --color-sea-950: #08202f;
+
+  /* the only motion: the sheet fades in (opacity only — nothing moves, so nothing has to settle before a click) */
+  --animate-sheet-in: sheet-in 200ms ease-out both;
+  @keyframes sheet-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}
+
+/* 2 · semantic · 3 · component --------------------------------------------------------------------------------- */
+@plugin 'daisyui/theme' {
+  name: 'ledger';
+  default: true;
+  prefersdark: false;
+  color-scheme: light;
+
+  --color-base-100: var(--color-paper-50);
+  --color-base-200: var(--color-paper-100);
+  --color-base-300: var(--color-paper-200);
+  --color-base-content: var(--color-ink-900);
+  --color-primary: var(--color-ledger-700);
+  --color-primary-content: var(--color-paper-50);
+  --color-secondary: var(--color-brass-700);
+  --color-secondary-content: var(--color-paper-50);
+  --color-accent: var(--color-sea-700);
+  --color-accent-content: var(--color-sea-50);
+  --color-neutral: var(--color-ink-700);
+  --color-neutral-content: var(--color-paper-100);
+  --color-info: var(--color-sea-700);
+  --color-info-content: var(--color-sea-50);
+  --color-success: var(--color-fern-700);
+  --color-success-content: var(--color-fern-50);
+  --color-warning: var(--color-brass-500);
+  --color-warning-content: var(--color-brass-950);
+  --color-error: var(--color-brick-700);
+  --color-error-content: var(--color-brick-50);
+
+  --radius-selector: 0.25rem;
+  --radius-field: 0.25rem;
+  --radius-box: 0.5rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+@plugin 'daisyui/theme' {
+  name: 'ledger-night';
+  default: false;
+  prefersdark: true;
+  color-scheme: dark;
+
+  --color-base-100: var(--color-night-50);
+  --color-base-200: var(--color-night-100);
+  --color-base-300: var(--color-night-200);
+  --color-base-content: var(--color-bone-100);
+  --color-primary: var(--color-ledger-300);
+  --color-primary-content: var(--color-night-950);
+  --color-secondary: var(--color-brass-300);
+  --color-secondary-content: var(--color-brass-900);
+  --color-accent: var(--color-sea-300);
+  --color-accent-content: var(--color-sea-950);
+  --color-neutral: var(--color-night-700);
+  --color-neutral-content: var(--color-bone-100);
+  --color-info: var(--color-sea-300);
+  --color-info-content: var(--color-sea-950);
+  --color-success: var(--color-ledger-300);
+  --color-success-content: var(--color-night-950);
+  --color-warning: var(--color-brass-300);
+  --color-warning-content: var(--color-brass-900);
+  --color-error: var(--color-brick-300);
+  --color-error-content: var(--color-brick-950);
+
+  --radius-selector: 0.25rem;
+  --radius-field: 0.25rem;
+  --radius-box: 0.5rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+/* Page furniture shared by every screen: one `main` per screen is the sheet, one `h1` its title. ------------------ */
+@layer base {
+  /* The page is the paper (base-200); each screen's sheet — the `main` below — is the lighter base-100. Painting the
+     root, not the body, keeps the paper behind the whole viewport even when a screen is short. */
+  :root {
+    --root-bg: var(--color-base-200);
+  }
+
+  body {
+    @apply antialiased;
+  }
+
+  main {
+    @apply mx-4 my-8 flex flex-col gap-6 rounded-box border border-base-300 bg-base-100 p-6 shadow-xs motion-safe:animate-sheet-in sm:mx-auto sm:my-20 sm:max-w-md sm:p-8;
+  }
+
+  /* The signature: a double rule under the title, like the underline an accountant draws under a final figure. */
+  h1 {
+    @apply border-b-4 border-double border-base-content/55 pb-3 font-display text-3xl font-medium tracking-tight text-balance;
+  }
+
+  /* The title takes focus when a screen arrives (so it is announced), but it is not a control: no ring around it. */
+  h1:focus {
+    @apply outline-none;
+  }
+}
