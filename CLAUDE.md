@@ -135,3 +135,52 @@ Conformance: `artifacts/F-1/11-conformance-report.md` (CONFORMANT, 2026-10-29).
 - None for F-2. Pending outside the code: `develop` branch missing on origin (dev merge skipped); PR
   `feat/F-1` → `main` not opened (GitHub MCP down); `.claude/tech-stack-profile.md` should be regenerated.
 - Open question for the user (OQ-1): hash the session token at rest? (epic-level change to Session.)
+
+## Feature F-2: Record Income and Expense in a Wallet — DONE
+
+Conformance: `artifacts/F-2/11-conformance-report.md` (CONFORMANT, 2026-10-29).
+
+### Entities Introduced
+- **Wallet** (`wallets`, Ledger): `id`, `userId` (FK RESTRICT), `name` (trimmed, 1–60 code points, CHECK),
+  `currency` (`char(3)`, from the snapshot, fixed), `openingBalanceMinor` (BIGINT, may be ≤ 0), `createdAt`,
+  `updatedAt`. Balance derived in SQL (`SELECT_WALLET_WITH_BALANCE`, NUMERIC → text). No `archivedAt` yet (F-3).
+  The API body omits `userId`.
+- **Transaction** (`transactions`, Ledger): `id`, `walletId` (FK RESTRICT), `kind` (CHECK income/expense),
+  `amountMinor` (BIGINT > 0), `occurredOn` (DATE as exact `YYYY-MM-DD` string), `note` (≤ 200, blank → null),
+  `createdAt`, `updatedAt`. No `recordedByUserId` (F-4) or `categoryId` (F-8) yet.
+- **Currency** (Exchange Rates, not a table): `{ code, name, minorDigits }`, a frozen 30-entry snapshot in
+  `backend/src/rates/supported-currencies.ts` (BGN dropped; JPY/ISK/KRW 0 digits). It must be kept in step with
+  `mocks/ledger-api.inject.js`.
+
+### Key Decisions
+- Routes: `GET /currencies`, `GET|POST /wallets`, `GET /wallets/:walletId` (Wallet + Balance + all
+  Transactions), `POST /wallets/:walletId/transactions` (body includes `today`; returns the Transaction only, and the
+  Web App re-reads the Wallet). `GET /wallets` is a minimal list (no Balances); F-3 extends it.
+- Visibility is one SQL constant, `WALLET_IS_VISIBLE` in `ledger.repository.ts` (F-4 widens it). The F-3 archived
+  409 goes in `LedgerService.recordTransaction` after the 404 (a comment marks the spot). A malformed id is 404,
+  never `ParseUUIDPipe`.
+- Every `pg` Pool comes from `database/create-pool.ts` (DATE → string, BIGINT/NUMERIC stay strings); tests use
+  `createTestPool()`. Wallet detail reads in one REPEATABLE READ READ ONLY snapshot.
+- Reuse `ledger/validation/validators.ts` (`IsCalendarDate`, `IsNotAfter`, `IsPositiveMinorUnits`,
+  `IsWithinMinorUnitLimit`, `MaxCharacters`) and `dto/clean-text.ts`. Use `MaxCharacters`, not `@MaxLength`,
+  wherever a DB CHECK counts characters. Amounts are capped at 15 digits.
+- The shared `createValidationPipe()` answers a too-deeply-nested body with 400 (string `message`).
+- Frontend: `Services = { authService, walletService }`; shared HTTP helpers live in `frontend/src/services/http/`.
+  Money uses `toMinorUnits` / `formatMinor` (`en-US`, Currency code, digits from `GET /currencies`, formatted from
+  the string so values beyond 2^53 stay exact). `localToday()` uses getFullYear/getMonth/getDate, never
+  `toISOString`. Add F-3's 409 (and maybe 429) to `SHOWN_AS_SENT` in `wallet-messages.ts`.
+- Edge: nginx `ledger_writes` limits writes under `/api/v1/wallets` (60/min per address). Run one backend replica.
+- Starting the backing stack for API calls: `up -d --wait postgres`, then `run --rm -T migrations` (`up --wait`
+  does not wait for the Liquibase one-shot).
+
+### Failed Approaches (Do Not Retry)
+- Setting `process.env.TZ` inside a Jest test does not change the process zone (H-13). Set it in the Jest config,
+  or run the process with `TZ`.
+- class-validator `@MaxLength` counts differently from Postgres `char_length` (variation selectors), which turns
+  into 500s on CHECK constraints.
+- A bare `docker compose up -d --wait` before calling the API races Liquibase (`relation "users" does not exist`).
+
+### Blockers for Next Feature
+- None for F-3. Follow-ups: H-13 (fix the int-test timezone at its root; CI is pinned to `Asia/Bangkok`), the
+  `develop` branch is missing on origin, the PR `feat/F-2` → `main` is pending (GitHub MCP down), and
+  `.claude/tech-stack-profile.md` needs regenerating. Plan amendments PA-1..PA-10 and OQ-1 await the user.

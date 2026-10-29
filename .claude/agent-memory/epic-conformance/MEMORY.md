@@ -1,1 +1,1 @@
-- [Additive error-contract extensions](additive-error-contract-extensions.md) — 415/429-retryAt judged conformant at F-1; PA-1..3 and OQ-1 pending with user
+- [Additive contract extensions](additive-error-contract-extensions.md) — PA-1..10 (F-1, F-2) judged conformant, none folded into epic yet; OQ-1 pending
