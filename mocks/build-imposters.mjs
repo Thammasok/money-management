@@ -33,7 +33,8 @@ const imposters = {
       // imposter's `config.state`, so Ledger reads the Sessions Identity stores.
       stubs: [
         {
-          // F-2 Ledger + Exchange Rates (currencies, wallets, transactions)
+          // F-2 Ledger + Exchange Rates (currencies, wallets, transactions) + F-3 (Wallet Overview, PATCH
+          // rename/archive, 409 for an Archived Wallet) — same injection, same path predicate
           predicates: [{ matches: { path: '^/api/v1/(currencies|wallets)(/.*)?$' } }],
           responses: [{ inject: loadInjection('ledger-api.inject.js') }],
         },

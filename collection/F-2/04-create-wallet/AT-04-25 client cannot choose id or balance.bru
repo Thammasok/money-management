@@ -33,6 +33,6 @@ tests {
     expect(w.id).to.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
     expect(w.id).to.not.equal("3f6c1a52-9d7e-4b8a-a1c4-5e2f7d9b0c13");
     expect(w.balanceMinor).to.equal("10");
-    expect(Object.keys(w).sort()).to.deep.equal(["balanceMinor", "createdAt", "currency", "id", "name", "openingBalanceMinor", "updatedAt"]);
+    expect(Object.keys(w).sort()).to.deep.equal(["archivedAt", "balanceMinor", "createdAt", "currency", "id", "name", "openingBalanceMinor", "updatedAt"]);
   });
 }

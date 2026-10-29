@@ -1,0 +1,31 @@
+meta {
+  name: AT-05-18 rename and archive together
+  type: http
+  seq: 18
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/wallets/{{wArBoth}}
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidAr}}
+}
+
+body:json {
+  {
+    "name": "Both Done",
+    "archived": true
+  }
+}
+
+tests {
+  // one request may rename and archive together
+  test("200 renamed and archived", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().name).to.equal("Both Done");
+    expect(res.getBody().archivedAt).to.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/);
+  });
+}

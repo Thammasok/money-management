@@ -1,0 +1,33 @@
+meta {
+  name: AT-02-10 record into archived Bank refused
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{baseUrl}}/api/v1/wallets/{{wSkelBank}}/transactions
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidSkel3}}
+}
+
+body:json {
+  {
+    "kind": "expense",
+    "amountMinor": "100",
+    "occurredOn": "{{today}}",
+    "note": null,
+    "today": "{{today}}"
+  }
+}
+
+tests {
+  // S-12 ⭐ — an Archived Wallet accepts no new Transaction
+  test("409 This wallet is archived and accepts no new transactions. (exact body)", function () {
+    expect(res.getStatus()).to.equal(409);
+    expect(res.getBody()).to.deep.equal({ statusCode: 409, message: "This wallet is archived and accepts no new transactions.", error: "Conflict" });
+  });
+}

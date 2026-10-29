@@ -1,0 +1,29 @@
+meta {
+  name: AT-05-06 archived as number
+  type: http
+  seq: 6
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/wallets/{{wArOld}}
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidAr}}
+}
+
+body:json {
+  {
+    "archived": 1
+  }
+}
+
+tests {
+  // S-13 — JSON true only
+  test("400 with exactly ['Archived can only be set to true.']", function () {
+    expect(res.getStatus()).to.equal(400);
+    expect(res.getBody()).to.deep.equal({ statusCode: 400, message: ["Archived can only be set to true."], error: "Bad Request" });
+  });
+}

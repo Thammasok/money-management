@@ -1,0 +1,29 @@
+meta {
+  name: AT-04-12 name 60 emoji
+  type: http
+  seq: 12
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/wallets/{{wRn}}
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidRn}}
+}
+
+body:json {
+  {
+    "name": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+  }
+}
+
+tests {
+  // S-11 — characters are code points (as Postgres counts them), not UTF-16 units
+  test("200 with the 60-emoji name", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().name).to.equal("😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀");
+  });
+}

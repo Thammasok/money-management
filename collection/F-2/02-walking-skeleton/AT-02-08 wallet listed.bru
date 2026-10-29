@@ -20,7 +20,7 @@ tests {
     expect(res.getStatus()).to.equal(200);
     const list = res.getBody().wallets;
     expect(list).to.have.length(1);
-    expect(Object.keys(list[0]).sort()).to.deep.equal(["createdAt", "currency", "id", "name"]);
+    expect(Object.keys(list[0]).sort()).to.deep.equal(["archivedAt", "balanceMinor", "createdAt", "currency", "id", "name"]);
     expect(list[0].id).to.equal(bru.getVar("walletIdSkel"));
     expect(list[0].name).to.equal("Cash");
     expect(list[0].currency).to.equal("THB");

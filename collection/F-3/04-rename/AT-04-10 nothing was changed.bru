@@ -1,0 +1,26 @@
+meta {
+  name: AT-04-10 nothing was changed
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{baseUrl}}/api/v1/wallets/{{wRn}}
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidRn}}
+}
+
+tests {
+  // S-11, S-13 — refused requests changed nothing, not even updatedAt
+  test("still Cash, untouched", function () {
+    expect(res.getStatus()).to.equal(200);
+    const w = res.getBody();
+    expect(w.name).to.equal("Cash");
+    expect(w.updatedAt).to.equal(bru.getVar("rnUpdatedAt"));
+    expect(w.archivedAt).to.equal(null);
+  });
+}

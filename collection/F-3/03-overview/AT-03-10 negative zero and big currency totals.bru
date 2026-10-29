@@ -1,0 +1,33 @@
+meta {
+  name: AT-03-10 negative zero and big currency totals
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{baseUrl}}/api/v1/wallets
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidOv}}
+}
+
+tests {
+  // S-7, S-8, S-14 — exact BigInt sums (beyond 2^53), negative and zero lines; another User's THB not counted
+  test("own Wallets only, newest first, derived balances", function () {
+    expect(res.getStatus()).to.equal(200);
+    const list = res.getBody().wallets;
+    expect(list.map(function (w) { return w.id; })).to.deep.equal([bru.getVar("wOvMinus"), bru.getVar("wOvZero"), bru.getVar("wOvYen"), bru.getVar("wOvBig2"), bru.getVar("wOvBig1")]);
+    expect(list.map(function (w) { return w.balanceMinor; })).to.deep.equal(["-250075", "0", "-1500", "999999999999999", "999999999999999"]);
+  });
+  test("Currency Totals sorted by code, exact", function () {
+    expect(res.getBody().currencyTotals).to.deep.equal([
+      { currency: "EUR", balanceMinor: "0" },
+      { currency: "JPY", balanceMinor: "-1500" },
+      { currency: "KRW", balanceMinor: "1999999999999998" },
+      { currency: "THB", balanceMinor: "-250075" }
+    ]);
+  });
+}

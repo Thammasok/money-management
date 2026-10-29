@@ -1,0 +1,29 @@
+meta {
+  name: AT-06-05 intruder archives A-Cash
+  type: http
+  seq: 5
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/wallets/{{wAc}}
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidAcIntruder}}
+}
+
+body:json {
+  {
+    "archived": true
+  }
+}
+
+tests {
+  // S-14 — no existence leak, never 403
+  test("404 Wallet not found. (exact body)", function () {
+    expect(res.getStatus()).to.equal(404);
+    expect(res.getBody()).to.deep.equal({ statusCode: 404, message: "Wallet not found.", error: "Not Found" });
+  });
+}

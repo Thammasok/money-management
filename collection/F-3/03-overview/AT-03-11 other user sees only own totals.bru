@@ -1,0 +1,25 @@
+meta {
+  name: AT-03-11 other user sees only own totals
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{baseUrl}}/api/v1/wallets
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidOvOther}}
+}
+
+tests {
+  // S-14 — Currency Totals cover only the signed-in User's Wallets
+  test("one Wallet, THB 500000", function () {
+    expect(res.getStatus()).to.equal(200);
+    const body = res.getBody();
+    expect(body.wallets.map(function (w) { return w.id; })).to.deep.equal([bru.getVar("wOvOther")]);
+    expect(body.currencyTotals).to.deep.equal([{ currency: "THB", balanceMinor: "500000" }]);
+  });
+}

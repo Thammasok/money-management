@@ -1,0 +1,40 @@
+meta {
+  name: AT-02-08 rename Cash
+  type: http
+  seq: 8
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/wallets/{{wSkelCash}}
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidSkel3}}
+}
+
+body:json {
+  {
+    "name": "Daily Cash"
+  }
+}
+
+tests {
+  // S-3 ⭐ — rename returns the whole Wallet; nothing but the name (and updatedAt) changes
+  test("200 Wallet with exactly the Wallet keys", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(Object.keys(res.getBody()).sort()).to.deep.equal(["archivedAt", "balanceMinor", "createdAt", "currency", "id", "name", "openingBalanceMinor", "updatedAt"]);
+  });
+  test("renamed, same Wallet, same money", function () {
+    const w = res.getBody();
+    expect(w.id).to.equal(bru.getVar("wSkelCash"));
+    expect(w.name).to.equal("Daily Cash");
+    expect(w.currency).to.equal("THB");
+    expect(w.openingBalanceMinor).to.equal("100000");
+    expect(w.balanceMinor).to.equal("87450");
+    expect(w.archivedAt).to.equal(null);
+    expect(w.updatedAt).to.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/);
+    expect(w.updatedAt > w.createdAt).to.equal(true);
+  });
+}

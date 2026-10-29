@@ -1,0 +1,25 @@
+meta {
+  name: AT-01-01 rename without session
+  type: http
+  seq: 1
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/wallets/3f6c1a52-9d7e-4b8a-a1c4-5e2f7d9b0c13
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "X"
+  }
+}
+
+tests {
+  // S-15 — PATCH is protected like every Ledger route
+  test("401 Not signed in. (exact body)", function () {
+    expect(res.getStatus()).to.equal(401);
+    expect(res.getBody()).to.deep.equal({ statusCode: 401, message: "Not signed in.", error: "Unauthorized" });
+  });
+}

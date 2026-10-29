@@ -1,0 +1,23 @@
+meta {
+  name: AT-06-11 intruder overview is empty
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{baseUrl}}/api/v1/wallets
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidAcIntruder}}
+}
+
+tests {
+  // S-14 — not in the intruder's list nor in their Currency Totals
+  test("200 { wallets: [], currencyTotals: [] }", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody()).to.deep.equal({ wallets: [], currencyTotals: [] });
+  });
+}

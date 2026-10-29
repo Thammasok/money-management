@@ -1,0 +1,29 @@
+meta {
+  name: AT-04-05 name not text
+  type: http
+  seq: 5
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/wallets/{{wRn}}
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidRn}}
+}
+
+body:json {
+  {
+    "name": 5
+  }
+}
+
+tests {
+  // S-11 — a name must be a string
+  test("400 with exactly ['Enter a wallet name.']", function () {
+    expect(res.getStatus()).to.equal(400);
+    expect(res.getBody()).to.deep.equal({ statusCode: 400, message: ["Enter a wallet name."], error: "Bad Request" });
+  });
+}

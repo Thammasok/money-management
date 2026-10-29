@@ -1,0 +1,23 @@
+meta {
+  name: AT-06-12 owner currency totals
+  type: http
+  seq: 12
+}
+
+get {
+  url: {{baseUrl}}/api/v1/wallets
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidAcOwner}}
+}
+
+tests {
+  // S-14 — the owner's totals are their own
+  test("THB 5000", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().currencyTotals).to.deep.equal([{ currency: "THB", balanceMinor: "5000" }]);
+  });
+}

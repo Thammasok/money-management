@@ -1,0 +1,39 @@
+meta {
+  name: AT-02-05 create Card USD
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/api/v1/wallets
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidSkel3}}
+}
+
+body:json {
+  {
+    "name": "Card",
+    "currency": "USD",
+    "openingBalanceMinor": "1000"
+  }
+}
+
+script:post-response {
+  bru.setVar("wSkelCard", res.getBody() && res.getBody().id);
+}
+
+tests {
+  // setup — F-2 create; F-3 adds archivedAt (null = active) to every Wallet body
+  test("201 Wallet with exactly the Wallet keys, active", function () {
+    expect(res.getStatus()).to.equal(201);
+    const w = res.getBody();
+    expect(Object.keys(w).sort()).to.deep.equal(["archivedAt", "balanceMinor", "createdAt", "currency", "id", "name", "openingBalanceMinor", "updatedAt"]);
+    expect(w.archivedAt).to.equal(null);
+    expect(w.name).to.equal("Card");
+    expect(w.balanceMinor).to.equal("1000");
+  });
+}

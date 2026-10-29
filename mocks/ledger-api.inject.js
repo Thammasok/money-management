@@ -1,5 +1,8 @@
 // Mountebank injection: a STATEFUL emulation of this project's own /api/v1 Ledger + Exchange Rates
-// endpoints (F-2): currencies, wallets, transactions.
+// endpoints (F-2): currencies, wallets, transactions — extended by F-3: the Wallet Overview (Balances +
+// Currency Totals on GET /wallets), PATCH /wallets/:id (rename / archive), `archivedAt` on every Wallet
+// body, and 409 for a Transaction into an Archived Wallet (after the 404). F-3 contract:
+// artifacts/F-3/01-requirements.md + artifacts/F-3/02-flow.md.
 //
 // Used in mock mode only — Stage 7 (Bruno, port 4545) and Stage 21/23 (Vite /api proxy → port 4545,
 // Playwright). It must be able to fail exactly the way the real NestJS modules fail
@@ -36,7 +39,11 @@ function (config) {
     futureDate: "Date can't be in the future.",
     note: 'Note must be at most 200 characters.',
     today: 'today must be a valid date (YYYY-MM-DD).',
-    walletNotFound: 'Wallet not found.'
+    walletNotFound: 'Wallet not found.',
+    archivedValue: 'Archived can only be set to true.',
+    nothingToChange: 'Nothing to change.',
+    alreadyArchived: 'This wallet is already archived.',
+    archivedWallet: 'This wallet is archived and accepts no new transactions.'
   };
 
   // Frankfurter's currency list, verified 2026-10-29 (artifacts/F-2/01-requirements.md), with ISO-4217
@@ -55,7 +62,7 @@ function (config) {
   ];
 
   if (!state.wallets) {
-    state.wallets = {};      // id -> { id, userId, name, currency, openingBalanceMinor, createdAt, updatedAt }
+    state.wallets = {};      // id -> { id, userId, name, currency, openingBalanceMinor, archivedAt, createdAt, updatedAt }
     state.transactions = []; // { id, walletId, kind, amountMinor, occurredOn, note, createdAt, updatedAt }
     state.lastMs = 0;
   }
@@ -160,6 +167,7 @@ function (config) {
       currency: wallet.currency,
       openingBalanceMinor: wallet.openingBalanceMinor,
       balanceMinor: walletBalance(wallet),
+      archivedAt: wallet.archivedAt || null,
       createdAt: wallet.createdAt,
       updatedAt: wallet.updatedAt
     };
@@ -208,6 +216,7 @@ function (config) {
   else if (method === 'GET' && path === '/api/v1/wallets') { route = 'listWallets'; }
   else if (method === 'POST' && path === '/api/v1/wallets') { route = 'createWallet'; }
   else if (method === 'GET' && segments.length === 5 && segments[3] === 'wallets' && segments[4] !== '') { route = 'getWallet'; }
+  else if (method === 'PATCH' && segments.length === 5 && segments[3] === 'wallets' && segments[4] !== '') { route = 'updateWallet'; }
   else if (method === 'POST' && segments.length === 6 && segments[3] === 'wallets' && segments[5] === 'transactions') { route = 'recordTransaction'; }
   if (!route) { return error(404, 'Cannot ' + method + ' ' + path, 'Not Found'); }
 
@@ -223,16 +232,52 @@ function (config) {
     }, cookie);
   }
 
-  // GET /api/v1/wallets — owned Wallets, newest createdAt first (ties: id desc)
+  // GET /api/v1/wallets — the Wallet Overview (F-3): owned Wallets, newest createdAt first (ties: id desc),
+  // each with its derived Balance and archivedAt (archived Wallets stay in place), plus one Currency Total per
+  // Currency (exact BigInt sum of owned Wallets' Balances, archived included), sorted by code.
   if (route === 'listWallets') {
     var mine = [];
     for (var id in state.wallets) {
       if (state.wallets[id].userId === who.userId) { mine.push(state.wallets[id]); }
     }
     mine.sort(function (a, b) { return desc(a.createdAt, b.createdAt) || desc(a.id, b.id); });
+    var sums = {};
+    var items = mine.map(function (w) {
+      var balance = walletBalance(w);
+      sums[w.currency] = (sums[w.currency] || BigInt(0)) + BigInt(balance);
+      return { id: w.id, name: w.name, currency: w.currency, balanceMinor: balance, archivedAt: w.archivedAt || null, createdAt: w.createdAt };
+    });
+    var codes = Object.keys(sums).sort();
     return respond(200, {
-      wallets: mine.map(function (w) { return { id: w.id, name: w.name, currency: w.currency, createdAt: w.createdAt }; })
+      wallets: items,
+      currencyTotals: codes.map(function (code) { return { currency: code, balanceMinor: sums[code].toString() }; })
     }, cookie);
+  }
+
+  // PATCH /api/v1/wallets/:walletId — rename and/or archive (F-3). DTO order: name, archived; then
+  // "Nothing to change." (request shape, before visibility); then 404; then 409 (archive on an Archived
+  // Wallet refuses the whole request); then apply both together. absent/null = not changing.
+  if (route === 'updateWallet') {
+    var uMessages = [];
+    var hasName = parsed.name !== undefined && parsed.name !== null;
+    var hasArchived = parsed.archived !== undefined && parsed.archived !== null;
+    var newName = null;
+    if (hasName) {
+      newName = typeof parsed.name === 'string' ? cleanText(parsed.name) : null;
+      if (newName === null || newName.length === 0) { uMessages.push(MSG.walletName); }
+      else if (characterCount(newName) > 60) { uMessages.push(MSG.walletNameLength); }
+    }
+    if (hasArchived && parsed.archived !== true) { uMessages.push(MSG.archivedValue); }
+    if (uMessages.length) { return error(400, uMessages, 'Bad Request', cookie); }
+    if (!hasName && !hasArchived) { return error(400, [MSG.nothingToChange], 'Bad Request', cookie); }
+    var toUpdate = ownedWallet(who.userId, segments[4]);
+    if (!toUpdate) { return error(404, MSG.walletNotFound, 'Not Found', cookie); }
+    if (hasArchived && toUpdate.archivedAt) { return error(409, MSG.alreadyArchived, 'Conflict', cookie); }
+    var changedAt = nowIso();
+    if (hasName) { toUpdate.name = newName; }
+    if (hasArchived) { toUpdate.archivedAt = changedAt; }
+    toUpdate.updatedAt = changedAt;
+    return respond(200, walletJson(toUpdate), cookie);
   }
 
   // POST /api/v1/wallets — DTO order: name, currency, openingBalanceMinor
@@ -260,6 +305,7 @@ function (config) {
       name: name,
       currency: parsed.currency,
       openingBalanceMinor: openingValue.toString(),
+      archivedAt: null,
       createdAt: created,
       updatedAt: created
     };
@@ -305,6 +351,8 @@ function (config) {
 
     var target = ownedWallet(who.userId, segments[4]);
     if (!target) { return error(404, MSG.walletNotFound, 'Not Found', cookie); }
+    // F-3: an Archived Wallet accepts no new Transaction — after the 404, so it never reveals a foreign Wallet.
+    if (target.archivedAt) { return error(409, MSG.archivedWallet, 'Conflict', cookie); }
     var at = nowIso();
     var transaction = {
       id: uuid(),

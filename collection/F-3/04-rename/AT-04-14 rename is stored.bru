@@ -1,0 +1,28 @@
+meta {
+  name: AT-04-14 rename is stored
+  type: http
+  seq: 14
+}
+
+get {
+  url: {{baseUrl}}/api/v1/wallets/{{wRn}}
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidRn}}
+}
+
+tests {
+  // S-3, S-10 — read back
+  test("Bank Savings, THB, opening 5000, active", function () {
+    expect(res.getStatus()).to.equal(200);
+    const w = res.getBody();
+    expect(w.name).to.equal("Bank Savings");
+    expect(w.currency).to.equal("THB");
+    expect(w.openingBalanceMinor).to.equal("5000");
+    expect(w.archivedAt).to.equal(null);
+    expect(w.updatedAt > bru.getVar("rnUpdatedAt")).to.equal(true);
+  });
+}

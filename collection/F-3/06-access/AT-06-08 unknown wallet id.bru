@@ -1,0 +1,29 @@
+meta {
+  name: AT-06-08 unknown wallet id
+  type: http
+  seq: 8
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/wallets/00000000-0000-4000-8000-000000000000
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidAcIntruder}}
+}
+
+body:json {
+  {
+    "name": "X"
+  }
+}
+
+tests {
+  // S-14 — unknown id
+  test("404 Wallet not found. (exact body)", function () {
+    expect(res.getStatus()).to.equal(404);
+    expect(res.getBody()).to.deep.equal({ statusCode: 404, message: "Wallet not found.", error: "Not Found" });
+  });
+}

@@ -1,0 +1,23 @@
+meta {
+  name: AT-02-02 no wallets no currency totals
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/v1/wallets
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidSkel3}}
+}
+
+tests {
+  // S-6 — the Overview envelope for a new User
+  test("200 { wallets: [], currencyTotals: [] }", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody()).to.deep.equal({ wallets: [], currencyTotals: [] });
+  });
+}

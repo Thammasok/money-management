@@ -1,0 +1,31 @@
+meta {
+  name: AT-05-21 overview with archived wallets
+  type: http
+  seq: 21
+}
+
+get {
+  url: {{baseUrl}}/api/v1/wallets
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidAr}}
+}
+
+tests {
+  // S-4 — Archived Wallets stay listed in place and keep counting in the Currency Total
+  test("New active; Both and Old archived", function () {
+    expect(res.getStatus()).to.equal(200);
+    const list = res.getBody().wallets;
+    expect(list.map(function (w) { return w.id; })).to.deep.equal([bru.getVar("wArNew"), bru.getVar("wArBoth"), bru.getVar("wArOld")]);
+    expect(list.map(function (w) { return w.name; })).to.deep.equal(["New", "Both Done", "Old Cash"]);
+    expect(list[0].archivedAt).to.equal(null);
+    expect(list[1].archivedAt).to.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/);
+    expect(list[2].archivedAt).to.equal(bru.getVar("arOldArchivedAt"));
+  });
+  test("THB total 10600 (archived included)", function () {
+    expect(res.getBody().currencyTotals).to.deep.equal([{ currency: "THB", balanceMinor: "10600" }]);
+  });
+}

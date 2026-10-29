@@ -1,0 +1,31 @@
+meta {
+  name: AT-03-13 zero total still listed
+  type: http
+  seq: 13
+}
+
+get {
+  url: {{baseUrl}}/api/v1/wallets
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidOv}}
+}
+
+tests {
+  // S-2, S-7 — a recorded Transaction moves the Balance and its Currency Total; a zero Total keeps its line
+  test("Minus at 0 and THB total 0", function () {
+    expect(res.getStatus()).to.equal(200);
+    const body = res.getBody();
+    expect(body.wallets[0].id).to.equal(bru.getVar("wOvMinus"));
+    expect(body.wallets[0].balanceMinor).to.equal("0");
+    expect(body.currencyTotals).to.deep.equal([
+      { currency: "EUR", balanceMinor: "0" },
+      { currency: "JPY", balanceMinor: "-1500" },
+      { currency: "KRW", balanceMinor: "1999999999999998" },
+      { currency: "THB", balanceMinor: "0" }
+    ]);
+  });
+}

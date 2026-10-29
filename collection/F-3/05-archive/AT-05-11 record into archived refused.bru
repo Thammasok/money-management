@@ -1,0 +1,33 @@
+meta {
+  name: AT-05-11 record into archived refused
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{baseUrl}}/api/v1/wallets/{{wArOld}}/transactions
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidAr}}
+}
+
+body:json {
+  {
+    "kind": "expense",
+    "amountMinor": "100",
+    "occurredOn": "{{today}}",
+    "note": null,
+    "today": "{{today}}"
+  }
+}
+
+tests {
+  // S-12 — no new Transaction in an Archived Wallet
+  test("409 This wallet is archived and accepts no new transactions. (exact body)", function () {
+    expect(res.getStatus()).to.equal(409);
+    expect(res.getBody()).to.deep.equal({ statusCode: 409, message: "This wallet is archived and accepts no new transactions.", error: "Conflict" });
+  });
+}

@@ -1,0 +1,27 @@
+meta {
+  name: AT-02-12 archived Bank detail keeps history
+  type: http
+  seq: 12
+}
+
+get {
+  url: {{baseUrl}}/api/v1/wallets/{{wSkelBank}}
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidSkel3}}
+}
+
+tests {
+  // S-4 — the detail carries archivedAt; nothing was recorded by the refused request
+  test("200 detail with archivedAt", function () {
+    expect(res.getStatus()).to.equal(200);
+    const w = res.getBody();
+    expect(Object.keys(w).sort()).to.deep.equal(["archivedAt", "balanceMinor", "createdAt", "currency", "id", "name", "openingBalanceMinor", "transactions", "updatedAt"]);
+    expect(w.archivedAt).to.equal(bru.getVar("skelBankArchivedAt"));
+    expect(w.balanceMinor).to.equal("250000");
+    expect(w.transactions).to.have.length(0);
+  });
+}

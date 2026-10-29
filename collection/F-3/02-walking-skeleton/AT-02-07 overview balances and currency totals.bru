@@ -1,0 +1,41 @@
+meta {
+  name: AT-02-07 overview balances and currency totals
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/api/v1/wallets
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidSkel3}}
+}
+
+tests {
+  // S-1 ⭐ — every owned Wallet with its derived Balance; one Currency Total per Currency, by code
+  test("200 with exactly wallets and currencyTotals", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(Object.keys(res.getBody()).sort()).to.deep.equal(["currencyTotals", "wallets"]);
+  });
+  test("wallets newest first with exactly the overview keys", function () {
+    const list = res.getBody().wallets;
+    expect(list.map(function (w) { return w.id; })).to.deep.equal([bru.getVar("wSkelCard"), bru.getVar("wSkelBank"), bru.getVar("wSkelCash")]);
+    list.forEach(function (w) {
+      expect(Object.keys(w).sort()).to.deep.equal(["archivedAt", "balanceMinor", "createdAt", "currency", "id", "name"]);
+      expect(w.archivedAt).to.equal(null);
+      expect(w.createdAt).to.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/);
+    });
+    expect(list.map(function (w) { return w.name; })).to.deep.equal(["Card", "Bank", "Cash"]);
+    expect(list.map(function (w) { return w.currency; })).to.deep.equal(["USD", "THB", "THB"]);
+    expect(list.map(function (w) { return w.balanceMinor; })).to.deep.equal(["1000", "250000", "87450"]);
+  });
+  test("Currency Totals THB 337450, USD 1000", function () {
+    expect(res.getBody().currencyTotals).to.deep.equal([
+      { currency: "THB", balanceMinor: "337450" },
+      { currency: "USD", balanceMinor: "1000" }
+    ]);
+  });
+}

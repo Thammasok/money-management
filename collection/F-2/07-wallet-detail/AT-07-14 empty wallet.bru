@@ -19,7 +19,7 @@ tests {
   test("exact empty Wallet detail", function () {
     expect(res.getStatus()).to.equal(200);
     const w = res.getBody();
-    expect(Object.keys(w).sort()).to.deep.equal(["balanceMinor", "createdAt", "currency", "id", "name", "openingBalanceMinor", "transactions", "updatedAt"]);
+    expect(Object.keys(w).sort()).to.deep.equal(["archivedAt", "balanceMinor", "createdAt", "currency", "id", "name", "openingBalanceMinor", "transactions", "updatedAt"]);
     expect(w.id).to.equal(bru.getVar("walletIdEmpty"));
     expect(w.name).to.equal("Empty");
     expect(w.currency).to.equal("EUR");

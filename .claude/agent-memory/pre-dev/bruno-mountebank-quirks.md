@@ -18,5 +18,10 @@ Stage 7 tooling facts learned on F-1 (2026-10-28); tools are repo-root devDepend
 - (F-2, 2026-10-29) One imposter can hold several injection stubs (`predicates: [{ matches: { path: '^/api/v1/(…)' } }]` first, Identity catch-all last); `config.state` is SHARED across them, so a per-module `mocks/*.inject.js` can read Identity's `state.sessions`. Mirror Nest's order: 415 → malformed JSON 400 → unknown route 404 → 401 → DTO 400 → 404.
 - (F-2) ~100 `.bru` files: write a one-off Node generator in the scratchpad (not committed) and run it once — bash discipline forbids loops/heredocs, and hand-writing each file is too slow. Wait for mb readiness with Monitor on `curl :2525/imposters/4545`.
 
+- (F-3, 2026-10-29) Earlier collections pin EXACT key sets (`Object.keys(w).sort()` deep.equal, `{ wallets: [] }`). Any
+  feature that adds a response field breaks them: grep `deep.equal(\[` in prior `collection/F-*` at Stage 6 and widen with a
+  scratchpad string-swap script (filenames have spaces — no xargs/sed). Record it as an additive contract change in handoffs.
+  Mock-mode Playwright of prior features (sandbox off) is a cheap proof the extended impostor didn't break their UI.
+
 **Why:** each of these cost a run; the Fix Budget is 5 runs per stage.
 **How to apply:** at Stage 7 of every later feature, add the new endpoints to the same 4545 impostor (see [[e2e-mode-via-proxy]]).

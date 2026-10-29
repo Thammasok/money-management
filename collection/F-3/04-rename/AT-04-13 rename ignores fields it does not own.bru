@@ -1,0 +1,42 @@
+meta {
+  name: AT-04-13 rename ignores fields it does not own
+  type: http
+  seq: 13
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/wallets/{{wRn}}
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidRn}}
+}
+
+body:json {
+  {
+    "name": "  Bank Savings  ",
+    "currency": "USD",
+    "openingBalanceMinor": "1",
+    "balanceMinor": "9",
+    "archivedAt": "2020-01-01T00:00:00.000Z",
+    "id": "00000000-0000-4000-8000-000000000000",
+    "userId": "00000000-0000-4000-8000-000000000000"
+  }
+}
+
+tests {
+  // S-10 — whitelist: only the name changes (trimmed); the Currency is fixed for ever
+  test("200, name trimmed, everything else unchanged", function () {
+    expect(res.getStatus()).to.equal(200);
+    const w = res.getBody();
+    expect(Object.keys(w).sort()).to.deep.equal(["archivedAt", "balanceMinor", "createdAt", "currency", "id", "name", "openingBalanceMinor", "updatedAt"]);
+    expect(w.id).to.equal(bru.getVar("wRn"));
+    expect(w.name).to.equal("Bank Savings");
+    expect(w.currency).to.equal("THB");
+    expect(w.openingBalanceMinor).to.equal("5000");
+    expect(w.balanceMinor).to.equal("5000");
+    expect(w.archivedAt).to.equal(null);
+  });
+}

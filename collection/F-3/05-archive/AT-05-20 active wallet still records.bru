@@ -1,0 +1,33 @@
+meta {
+  name: AT-05-20 active wallet still records
+  type: http
+  seq: 20
+}
+
+post {
+  url: {{baseUrl}}/api/v1/wallets/{{wArNew}}/transactions
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidAr}}
+}
+
+body:json {
+  {
+    "kind": "income",
+    "amountMinor": "100",
+    "occurredOn": "{{today}}",
+    "note": null,
+    "today": "{{today}}"
+  }
+}
+
+tests {
+  // setup — F-2 record path
+  test("201 Transaction recorded", function () {
+    expect(res.getStatus()).to.equal(201);
+    expect(res.getBody().amountMinor).to.equal("100");
+  });
+}

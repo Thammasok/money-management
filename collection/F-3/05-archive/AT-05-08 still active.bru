@@ -1,0 +1,24 @@
+meta {
+  name: AT-05-08 still active
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/api/v1/wallets/{{wArOld}}
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidAr}}
+}
+
+tests {
+  // S-13 — refused requests archived nothing
+  test("archivedAt null, name Old", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().archivedAt).to.equal(null);
+    expect(res.getBody().name).to.equal("Old");
+  });
+}

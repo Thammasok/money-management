@@ -16,8 +16,8 @@ headers {
 
 tests {
   // S-1 ⭐ / S-11 — a new User has no Wallets
-  test("200 { wallets: [] }", function () {
+  test("200 { wallets: [], currencyTotals: [] }", function () {
     expect(res.getStatus()).to.equal(200);
-    expect(res.getBody()).to.deep.equal({ wallets: [] });
+    expect(res.getBody()).to.deep.equal({ wallets: [], currencyTotals: [] });
   });
 }

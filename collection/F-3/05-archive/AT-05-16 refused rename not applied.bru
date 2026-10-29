@@ -1,0 +1,23 @@
+meta {
+  name: AT-05-16 refused rename not applied
+  type: http
+  seq: 16
+}
+
+get {
+  url: {{baseUrl}}/api/v1/wallets/{{wArOld}}
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidAr}}
+}
+
+tests {
+  // S-13 — all or nothing
+  test("still Old Cash", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().name).to.equal("Old Cash");
+  });
+}

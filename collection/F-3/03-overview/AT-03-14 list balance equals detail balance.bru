@@ -1,0 +1,24 @@
+meta {
+  name: AT-03-14 list balance equals detail balance
+  type: http
+  seq: 14
+}
+
+get {
+  url: {{baseUrl}}/api/v1/wallets/{{wOvYen}}
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidOv}}
+}
+
+tests {
+  // Balance convention — the list and the detail derive the same Balance
+  test("Yen detail -1500, active", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().balanceMinor).to.equal("-1500");
+    expect(res.getBody().archivedAt).to.equal(null);
+  });
+}

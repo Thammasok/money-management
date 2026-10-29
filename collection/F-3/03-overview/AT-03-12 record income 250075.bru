@@ -1,0 +1,33 @@
+meta {
+  name: AT-03-12 record income 250075
+  type: http
+  seq: 12
+}
+
+post {
+  url: {{baseUrl}}/api/v1/wallets/{{wOvMinus}}/transactions
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidOv}}
+}
+
+body:json {
+  {
+    "kind": "income",
+    "amountMinor": "250075",
+    "occurredOn": "{{today}}",
+    "note": null,
+    "today": "{{today}}"
+  }
+}
+
+tests {
+  // setup — F-2 record path
+  test("201 Transaction recorded", function () {
+    expect(res.getStatus()).to.equal(201);
+    expect(res.getBody().amountMinor).to.equal("250075");
+  });
+}

@@ -1,0 +1,29 @@
+meta {
+  name: AT-04-16 same name again
+  type: http
+  seq: 16
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/wallets/{{wRn}}
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidRn}}
+}
+
+body:json {
+  {
+    "name": "Bank Savings"
+  }
+}
+
+tests {
+  // names are not unique and an unchanged name is not an error
+  test("200 Bank Savings", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().name).to.equal("Bank Savings");
+  });
+}

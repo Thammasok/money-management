@@ -16,8 +16,8 @@ headers {
 
 tests {
   // S-20 — A-Cash is not in the intruder's list
-  test("200 { wallets: [] }", function () {
+  test("200 { wallets: [], currencyTotals: [] }", function () {
     expect(res.getStatus()).to.equal(200);
-    expect(res.getBody()).to.deep.equal({ wallets: [] });
+    expect(res.getBody()).to.deep.equal({ wallets: [], currencyTotals: [] });
   });
 }

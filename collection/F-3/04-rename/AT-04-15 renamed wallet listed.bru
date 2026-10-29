@@ -1,0 +1,25 @@
+meta {
+  name: AT-04-15 renamed wallet listed
+  type: http
+  seq: 15
+}
+
+get {
+  url: {{baseUrl}}/api/v1/wallets
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidRn}}
+}
+
+tests {
+  // S-3 — the Overview shows the new name
+  test("one Wallet named Bank Savings", function () {
+    expect(res.getStatus()).to.equal(200);
+    const body = res.getBody();
+    expect(body.wallets.map(function (w) { return w.name; })).to.deep.equal(["Bank Savings"]);
+    expect(body.currencyTotals).to.deep.equal([{ currency: "THB", balanceMinor: "5000" }]);
+  });
+}

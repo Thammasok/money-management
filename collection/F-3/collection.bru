@@ -1,0 +1,23 @@
+meta {
+  name: F-3 Wallet Overview and Management
+}
+
+script:pre-request {
+  // Once per collection run: a unique runId (every folder signs up its own Users as
+  // `{prefix}-{{runId}}@example.test`) and the runner's LOCAL calendar date — the "today" the Web App sends.
+  if (!bru.getVar("runId")) {
+    const runId = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    bru.setVar("runId", runId);
+    const pad = function (n) { return String(n).padStart(2, "0"); };
+    const d = new Date();
+    bru.setVar("today", d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()));
+  }
+}
+
+docs {
+  Acceptance-contract API suite for F-3 (artifacts/F-3/06-api-test-plan.md).
+  Run from this folder with cookies DISABLED — every request sends its session explicitly:
+    bru run -r --env mock --disable-cookies          (Stage 7: Mountebank impostor on :4545)
+    bru run -r --env integration --disable-cookies   (Stage 13: NestJS on :3000 + Postgres)
+  Root shortcuts: npm run api:test:mock:F-3 / npm run api:test:integration:F-3
+}

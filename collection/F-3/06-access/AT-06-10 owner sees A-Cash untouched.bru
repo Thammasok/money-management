@@ -1,0 +1,24 @@
+meta {
+  name: AT-06-10 owner sees A-Cash untouched
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{baseUrl}}/api/v1/wallets/{{wAc}}
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidAcOwner}}
+}
+
+tests {
+  // S-14 — nothing the intruder sent was applied
+  test("A-Cash, active", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().name).to.equal("A-Cash");
+    expect(res.getBody().archivedAt).to.equal(null);
+  });
+}

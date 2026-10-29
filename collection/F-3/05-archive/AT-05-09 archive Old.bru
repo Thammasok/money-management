@@ -1,0 +1,37 @@
+meta {
+  name: AT-05-09 archive Old
+  type: http
+  seq: 9
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/wallets/{{wArOld}}
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidAr}}
+}
+
+body:json {
+  {
+    "archived": true
+  }
+}
+
+script:post-response {
+  bru.setVar("arOldArchivedAt", res.getBody() && res.getBody().archivedAt);
+}
+
+tests {
+  // S-4 — archived, Balance kept
+  test("200 archived", function () {
+    expect(res.getStatus()).to.equal(200);
+    const w = res.getBody();
+    expect(Object.keys(w).sort()).to.deep.equal(["archivedAt", "balanceMinor", "createdAt", "currency", "id", "name", "openingBalanceMinor", "updatedAt"]);
+    expect(w.archivedAt).to.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/);
+    expect(w.balanceMinor).to.equal("10500");
+    expect(w.name).to.equal("Old");
+  });
+}

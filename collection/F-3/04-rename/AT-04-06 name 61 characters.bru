@@ -1,0 +1,29 @@
+meta {
+  name: AT-04-06 name 61 characters
+  type: http
+  seq: 6
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/wallets/{{wRn}}
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidRn}}
+}
+
+body:json {
+  {
+    "name": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"
+  }
+}
+
+tests {
+  // S-11 — 60 characters at most
+  test("400 with exactly ['Wallet name must be at most 60 characters.']", function () {
+    expect(res.getStatus()).to.equal(400);
+    expect(res.getBody()).to.deep.equal({ statusCode: 400, message: ["Wallet name must be at most 60 characters."], error: "Bad Request" });
+  });
+}

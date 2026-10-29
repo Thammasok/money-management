@@ -1,0 +1,27 @@
+meta {
+  name: AT-06-07 intruder sends nothing to change
+  type: http
+  seq: 7
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/wallets/{{wAc}}
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidAcIntruder}}
+}
+
+body:json {
+  {}
+}
+
+tests {
+  // S-14 — request shape before visibility
+  test("400 with exactly ['Nothing to change.']", function () {
+    expect(res.getStatus()).to.equal(400);
+    expect(res.getBody()).to.deep.equal({ statusCode: 400, message: ["Nothing to change."], error: "Bad Request" });
+  });
+}

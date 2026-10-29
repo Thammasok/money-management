@@ -1,0 +1,40 @@
+meta {
+  name: AT-02-09 archive Bank
+  type: http
+  seq: 9
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/wallets/{{wSkelBank}}
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidSkel3}}
+}
+
+body:json {
+  {
+    "archived": true
+  }
+}
+
+script:post-response {
+  bru.setVar("skelBankArchivedAt", res.getBody() && res.getBody().archivedAt);
+}
+
+tests {
+  // S-4 ⭐ — archive sets archivedAt (server time); Balance kept
+  test("200 archived Wallet", function () {
+    expect(res.getStatus()).to.equal(200);
+    const w = res.getBody();
+    expect(Object.keys(w).sort()).to.deep.equal(["archivedAt", "balanceMinor", "createdAt", "currency", "id", "name", "openingBalanceMinor", "updatedAt"]);
+    expect(w.id).to.equal(bru.getVar("wSkelBank"));
+    expect(w.name).to.equal("Bank");
+    expect(w.balanceMinor).to.equal("250000");
+    expect(w.archivedAt).to.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/);
+    expect(w.archivedAt > w.createdAt).to.equal(true);
+    expect(w.updatedAt >= w.archivedAt).to.equal(true);
+  });
+}

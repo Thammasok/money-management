@@ -1,0 +1,30 @@
+meta {
+  name: AT-05-15 rename with archive on archived refused
+  type: http
+  seq: 15
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/wallets/{{wArOld}}
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidAr}}
+}
+
+body:json {
+  {
+    "name": "Renamed again",
+    "archived": true
+  }
+}
+
+tests {
+  // S-13 — the whole request is refused; the name is not applied
+  test("409 This wallet is already archived. (exact body)", function () {
+    expect(res.getStatus()).to.equal(409);
+    expect(res.getBody()).to.deep.equal({ statusCode: 409, message: "This wallet is already archived.", error: "Conflict" });
+  });
+}

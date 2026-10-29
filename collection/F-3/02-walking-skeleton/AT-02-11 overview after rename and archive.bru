@@ -1,0 +1,32 @@
+meta {
+  name: AT-02-11 overview after rename and archive
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{baseUrl}}/api/v1/wallets
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidSkel3}}
+}
+
+tests {
+  // S-1, S-3, S-4 — new name listed; Archived Wallet stays in place and still counts in its Currency Total
+  test("names, archived state and balances", function () {
+    expect(res.getStatus()).to.equal(200);
+    const list = res.getBody().wallets;
+    expect(list.map(function (w) { return w.name; })).to.deep.equal(["Card", "Bank", "Daily Cash"]);
+    expect(list.map(function (w) { return w.archivedAt; })).to.deep.equal([null, bru.getVar("skelBankArchivedAt"), null]);
+    expect(list.map(function (w) { return w.balanceMinor; })).to.deep.equal(["1000", "250000", "87450"]);
+  });
+  test("Currency Totals unchanged (archived counted)", function () {
+    expect(res.getBody().currencyTotals).to.deep.equal([
+      { currency: "THB", balanceMinor: "337450" },
+      { currency: "USD", balanceMinor: "1000" }
+    ]);
+  });
+}

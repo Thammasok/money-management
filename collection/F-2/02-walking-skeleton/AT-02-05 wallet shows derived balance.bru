@@ -18,7 +18,7 @@ tests {
   // S-1 ⭐ — Balance derived on read: 100000 - 12550 = 87450; the stored Transaction comes back byte-identical
   test("200 with exactly the Wallet detail keys", function () {
     expect(res.getStatus()).to.equal(200);
-    expect(Object.keys(res.getBody()).sort()).to.deep.equal(["balanceMinor", "createdAt", "currency", "id", "name", "openingBalanceMinor", "transactions", "updatedAt"]);
+    expect(Object.keys(res.getBody()).sort()).to.deep.equal(["archivedAt", "balanceMinor", "createdAt", "currency", "id", "name", "openingBalanceMinor", "transactions", "updatedAt"]);
   });
   test("balanceMinor 87450, one Transaction", function () {
     const w = res.getBody();

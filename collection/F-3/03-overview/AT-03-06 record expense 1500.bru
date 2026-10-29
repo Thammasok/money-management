@@ -1,0 +1,33 @@
+meta {
+  name: AT-03-06 record expense 1500
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/api/v1/wallets/{{wOvYen}}/transactions
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidOv}}
+}
+
+body:json {
+  {
+    "kind": "expense",
+    "amountMinor": "1500",
+    "occurredOn": "{{today}}",
+    "note": null,
+    "today": "{{today}}"
+  }
+}
+
+tests {
+  // setup — F-2 record path
+  test("201 Transaction recorded", function () {
+    expect(res.getStatus()).to.equal(201);
+    expect(res.getBody().amountMinor).to.equal("1500");
+  });
+}

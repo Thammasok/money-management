@@ -1,0 +1,27 @@
+meta {
+  name: AT-05-13 archived keeps history
+  type: http
+  seq: 13
+}
+
+get {
+  url: {{baseUrl}}/api/v1/wallets/{{wArOld}}
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidAr}}
+}
+
+tests {
+  // S-4, S-12 — history kept, nothing new recorded
+  test("archivedAt kept, one Transaction, Balance 10500", function () {
+    expect(res.getStatus()).to.equal(200);
+    const w = res.getBody();
+    expect(w.archivedAt).to.equal(bru.getVar("arOldArchivedAt"));
+    expect(w.balanceMinor).to.equal("10500");
+    expect(w.transactions).to.have.length(1);
+    expect(w.transactions[0].amountMinor).to.equal("500");
+  });
+}

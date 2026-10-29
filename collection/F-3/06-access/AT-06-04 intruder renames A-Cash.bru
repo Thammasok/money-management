@@ -1,0 +1,29 @@
+meta {
+  name: AT-06-04 intruder renames A-Cash
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/wallets/{{wAc}}
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidAcIntruder}}
+}
+
+body:json {
+  {
+    "name": "Mine now"
+  }
+}
+
+tests {
+  // S-14 — a foreign Wallet does not exist for the intruder
+  test("404 Wallet not found. (exact body)", function () {
+    expect(res.getStatus()).to.equal(404);
+    expect(res.getBody()).to.deep.equal({ statusCode: 404, message: "Wallet not found.", error: "Not Found" });
+  });
+}

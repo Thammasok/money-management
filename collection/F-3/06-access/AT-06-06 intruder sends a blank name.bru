@@ -1,0 +1,29 @@
+meta {
+  name: AT-06-06 intruder sends a blank name
+  type: http
+  seq: 6
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/wallets/{{wAc}}
+  body: json
+  auth: none
+}
+
+headers {
+  Cookie: sid={{sidAcIntruder}}
+}
+
+body:json {
+  {
+    "name": ""
+  }
+}
+
+tests {
+  // S-14 — request shape before visibility
+  test("400 with exactly ['Enter a wallet name.']", function () {
+    expect(res.getStatus()).to.equal(400);
+    expect(res.getBody()).to.deep.equal({ statusCode: 400, message: ["Enter a wallet name."], error: "Bad Request" });
+  });
+}
