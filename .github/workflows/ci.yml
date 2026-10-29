@@ -86,12 +86,26 @@ jobs:
           npm ci
           npm --prefix backend ci
           npm --prefix frontend ci
+      # Playwright only transpiles the specs; this is the one place the page objects and fixtures of every feature are type-checked.
+      - name: Type-check the E2E code
+        run: npm run e2e:typecheck
       - name: Install the Playwright browser
         run: npx playwright install --with-deps chromium
-      # Postgres 16 on host port 15432 with the Liquibase changelog applied, `test` context (seed User included).
-      - name: Start Postgres and apply the changelog
-        run: docker compose -f docker-compose.backing-service.yml up -d --wait
-      - name: Backend integration tests
+      # Postgres 16 on host port 15432, then the Liquibase changelog (`test` context, seed User included). Two steps on
+      # purpose: Liquibase is a one-shot with no healthcheck, so `up --wait` calls it ready while it is still applying
+      # the changelog (measured: `up` returned before Liquibase finished, and the first request met an empty schema).
+      # `run` blocks until Liquibase exits and a non-zero exit fails the step, so no test below sees a half-built schema.
+      - name: Start Postgres
+        run: docker compose -f docker-compose.backing-service.yml up -d --wait postgres
+      - name: Apply the changelog (Liquibase)
+        run: docker compose -f docker-compose.backing-service.yml run --rm -T migrations
+      # TZ is pinned east of Greenwich on purpose. The Ledger's DATE round-trip tests (IT-01) need a process timezone where
+      # pg's default DATE parser would move the day, and Jest cannot switch the zone from inside a test (its `process.env`
+      # is a copy), so those tests only mean something on a machine already in such a zone: the developer's is
+      # Asia/Bangkok. A GitHub runner is UTC, where the "premise" test fails (verified on Node 24.22.1).
+      - name: Backend integration tests (Identity and Ledger)
+        env:
+          TZ: Asia/Bangkok
         run: npm --prefix backend run test:int
       - name: Start the API
         env:
@@ -109,14 +123,16 @@ jobs:
           echo "The API did not become ready" >&2
           cat api.log >&2
           exit 1
-      - name: API acceptance suite (Bruno)
+      # F-1 then F-2: the script chains every feature's collection, so a failure in either fails the step.
+      - name: API acceptance suites (Bruno, every feature)
         run: npm run api:test:integration
       - name: Stop the API
         if: always()
         run: kill "$(cat api.pid)" || true
       # Playwright starts the Vite dev server and builds and starts the API itself (playwright.config.ts); the
-      # database it needs is already up. CI=true gives it two retries and forbids test.only.
-      - name: E2E (Playwright)
+      # database it needs is already up. With no path argument it runs every spec under e2e/ (F-1, F-2 and the journey
+      # between them). CI=true gives it two retries and forbids test.only.
+      - name: E2E (Playwright, every feature)
         run: npx playwright test --reporter=list,html
       - name: Upload the Playwright report
         if: failure()

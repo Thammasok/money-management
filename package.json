@@ -3,7 +3,7 @@
   "private": true,
   "description": "Repo-root acceptance tooling only: Playwright E2E (e2e/), Bruno API tests (collection/), Mountebank impostors (mocks/), and the db:* scripts for docker-compose.backing-service.yml. The apps keep their own package.json in backend/ and frontend/.",
   "scripts": {
-    "db:up": "docker compose -f docker-compose.backing-service.yml up -d --wait",
+    "db:up": "docker compose -f docker-compose.backing-service.yml up -d --wait postgres && npm run db:reset",
     "db:reset": "docker compose -f docker-compose.backing-service.yml run --rm -T migrations",
     "db:down": "docker compose -f docker-compose.backing-service.yml down -v",
     "mocks:build": "node mocks/build-imposters.mjs",

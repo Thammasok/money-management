@@ -41,6 +41,11 @@ services:
   # One-shot: applies db/changelog, then exits 0 before the API starts. The context filter is `prod`, NOT empty:
   # an empty Liquibase filter runs every changeset, including the `context: test` seed User with a known password.
   # Changesets without a context (the schema) run under any filter.
+  # Why `up --wait` is safe here: `backend` waits for this service to exit 0 (service_completed_successfully) and `web`
+  # waits for `backend`, so `up --wait` returns only after the migration has finished. (docker-compose.backing-service.yml
+  # has no service that depends on its migration, so there `up --wait` returns while Liquibase is still running.)
+  # Every `up` starts this one-shot again; with nothing new in db/changelog it is a no-op, so an update applies new
+  # changesets before the new API starts, and the old API keeps serving meanwhile (changesets are additive: expand first).
   migrations:
     image: liquibase/liquibase:4.31
     restart: "no"

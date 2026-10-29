@@ -33,3 +33,29 @@ Node is pinned to **24.22.1** (LTS) in both Dockerfiles and CI rather than 22: t
 **Verification of the release artifact (2026-10-29).** Two from-scratch image builds produced identical backend output (tree hash `36ec14ac…`) and identical web asset names (`index-C8sK9Byi.js`, `index-DMfIuhCZ.css`). The production stack came up healthy on the first attempt; the smoke test passed 11 of 11; the edge rate limit, the pass-through of the backend's own 429 with `retryAt`, runtime re-resolution of the backend address, graceful SIGTERM shutdown (exit code 0), and data surviving `docker compose down` / `up` were each exercised against the running stack.
 
 **References.** Pre-dev `79504b6`, backend `2d44085`, frontend `34ea102`, all on `feat/F-1`; the deployment track's commit is made by the main session. The PR to `main` and the merge into `develop` are pending: `develop` does not exist on origin and the GitHub MCP was not connected (recorded in `artifacts/F-1/track-handoffs.md`, "Orchestrator — Ship Notes").
+
+### F-2: Record Income and Expense in a Wallet
+
+Brownfield on F-1 (2026-10-29), branch `feat/F-2` (stacked on `feat/F-1`), run autonomously by the vibe pipeline: pre-dev, backend, frontend, deployment tracks. The deployment track was resumed after an interruption; it reused nothing from the stopped run and rebuilt everything it validated.
+
+**Test-count delta and the math.**
+
+| Suite | Tool | Before (F-1) | Added by F-2 | Total now | Measured |
+|---|---|---|---|---|---|
+| Backend unit | Jest 30 | 115 tests / 11 files | +287 / +12 files | 402 / 23 files | 2026-10-29, Node 24.22.1 container (`npm test`) |
+| Backend integration (real Postgres) | Jest 30 + Supertest | 36 tests / 2 files | +154 / +2 files (42 repository, 112 HTTP) | 190 / 4 files | 2026-10-29, Node 24.22.1 container, `TZ=Asia/Bangkok` (`npm run test:int`) |
+| Frontend unit and component | Vitest 5 | 100 tests / 15 files | +259 / +18 files | 359 / 33 files | 2026-10-29, Node 24.22.1 container (`npm test`) |
+| API contract | Bruno 4.3 | 44 requests, 53 tests | +108 requests, +147 tests | 152 requests, 200 tests | 2026-10-29, run against the **built backend image**, `TZ=UTC` |
+| End to end | Playwright 1.64 | 16 tests / 4 files | +22 tests / +6 files (incl. the F-1 to F-2 journey) | 38 tests / 10 files | 2026-10-29, `bash .claude/scripts/run-e2e.sh "" list` |
+
+115 + 287 = 402; 36 + 154 = 190; 100 + 259 = 359 (the 259 include three F-1 two-Act tests split into six single-Act tests); 44 + 108 = 152 requests and 53 + 147 = 200 tests; 16 + 22 = 38. The earlier tracks reported the same figures, so nothing was added or lost during deployment. The deployment track added no test; it grew the post-deploy smoke test from 11 to 19 checks.
+
+**Schema and migrations.** Tables `wallets` and `transactions`. Changesets `F-2-001-create-wallets` and `F-2-002-create-transactions`: no context (they run everywhere) and no seed; F-1's changesets are not renumbered. Production still runs `--contexts=prod`: offline `update-sql` emits the five schema changesets and no `INSERT` with it, and the seed `INSERT` without it; a real production-context database reports "Run: 5, Filtered out: 1 (Context mismatch)" and holds 0 seed Users.
+
+**CI/CD changes.** `.github/workflows/ci.yml`, job `integration`: Postgres and Liquibase are now two steps (`up -d --wait postgres`, then `run --rm -T migrations`), because `up --wait` does not wait for a one-shot without a healthcheck; the backend integration step sets `TZ: Asia/Bangkok`, because the Ledger's date tests (IT-01) cannot change the process zone from inside Jest and fail on a UTC runner (reproduced on Node 24.22.1; hand-off H-13 in `artifacts/F-2/10-deployment-report.md`); step names say "every feature". `npm run db:up` got the same two-step fix. No new job, no `continue-on-error`. Other deployment artifacts changed: `scripts/smoke-test.sh` (checks 12 to 19), `frontend/nginx/default.conf.template` (limiter `ledger_writes`: 60 a minute per address, burst 20, every write under `/api/v1/wallets`), comments in both compose files.
+
+**Contract Disputes.** None in any track. The backend track corrected `mocks/ledger-api.inject.js` to match the real service (no assertion touched). The deployment track touched nothing under `e2e/`, `collection/` or `mocks/`.
+
+**Verification of the release artifact (2026-10-29).** A from-scratch `--no-cache` build reproduced the backend `dist` tree hash (`58ae7dce…`) and the web asset names (`index-BmdlPQx6.css`, `index-CAqSldCq.js`) of a build made hours earlier. The production stack came up healthy and the smoke test passed 19 of 19. The update from a running F-1 stack holding a signed-in User (`docker compose up -d --build --wait`), the rollback to the F-1 images (`APP_VERSION=f1`; F-1's smoke test 11 of 11 on the F-2 schema) and the roll-forward were each run, and a wallet recorded before the rollback was intact afterwards. The edge limiter, the rendering of the three new screens under the strict CSP, graceful shutdown (exit code 0) and the container hardening were exercised on the running stack.
+
+**References.** Pre-dev `54cd992`, backend `09827dc`, frontend `e1a3b80`, all on `feat/F-2`; the deployment track's commit is made by the main session. The PR to `main` and the merge into `develop` are pending: `develop` does not exist on origin and the GitHub MCP was not connected (`artifacts/F-2/track-handoffs.md`, "Orchestrator — Ship Notes").

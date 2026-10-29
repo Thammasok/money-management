@@ -1,4 +1,6 @@
 - [Liquibase empty context runs everything](liquibase-empty-context-runs-everything.md) — harness says prod = no contexts; that ships the seed User. Use --contexts=prod
 - [Node/npm lockfile LTS pin](node-npm-lockfile-lts-pin.md) — lockfiles by npm 12; Node 22's npm 10 rejects backend lock; pin Node 24 LTS; how to test
-- [Agent sandbox validation recipes](agent-sandbox-validation-recipes.md) — compose --env-file, curl globbing loops, mktemp quirk, actionlint, screenshot CSP check
-- [nginx edge and compose gotchas](nginx-edge-and-compose-gotchas.md) — envsubst, add_header inheritance, runtime DNS, read-only rootfs, limit_req key map
+- [Agent sandbox validation recipes](agent-sandbox-validation-recipes.md) — compose --env-file, docker+redirect denied, curl --next bursts, screenshots, Bruno vs image
+- [nginx edge and compose gotchas](nginx-edge-and-compose-gotchas.md) — envsubst, add_header, multi-zone limit_req, up --wait vs one-shots, read-only rootfs
+- [Jest TZ trap in CI](jest-process-env-timezone-ci-trap.md) — process.env.TZ in a Jest test does nothing; zone tests pass only on a +07 dev Mac, fail on UTC CI
+- [Release update/rollback drill](release-update-rollback-drill.md) — git archive the old release, run both on one volume, prove new schema is backward compatible

@@ -31,6 +31,9 @@ services:
 
   # One-shot: applies db/changelog (schema + the `test` seed context by default), then exits 0.
   # `npm run db:reset` runs it again on demand.
+  # `up --wait` does NOT wait for it: a one-shot has no healthcheck, so "running" counts as ready (measured: `up`
+  # returned 0.3 s before Liquibase finished). `npm run db:up` therefore starts Postgres with --wait and then runs this
+  # service to completion; a script that calls the API right after bringing the stack up must do the same.
   migrations:
     image: liquibase/liquibase:4.31
     depends_on:

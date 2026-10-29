@@ -28,6 +28,18 @@ map "$request_method $uri" $auth_write_key {
     "~^POST /api/v1/(users|sessions)/?$"   $binary_remote_addr;
 }
 limit_req_zone $auth_write_key zone=auth_writes:10m rate=30r/m;
+
+# Creating a Wallet and recording a Transaction (F-2). Sign-up is open and the API has no per-User quota, so the edge
+# bounds how fast one client address can add rows: 60 a minute (one a second), bursts of 20. A person typing receipts is
+# an order of magnitude below that, and a household behind one address still has room. Every write verb under
+# /api/v1/wallets is counted, so a route a later feature adds there is covered without touching this file; reads are
+# never limited. The key is the client address, so the zone is independent of auth_writes (an empty key is never counted).
+# $uri is the decoded, normalised path, so an encoded form of a real Wallet id lands in the same bucket.
+map "$request_method $uri" $ledger_write_key {
+    default                                          "";
+    "~^(POST|PUT|PATCH|DELETE) /api/v1/wallets(/|$)" $binary_remote_addr;
+}
+limit_req_zone $ledger_write_key zone=ledger_writes:10m rate=60r/m;
 limit_req_status 429;
 
 server {
@@ -54,7 +66,9 @@ server {
     # The API, on the same origin as the SPA. The headers on these responses are the backend's own. The backend is
     # re-resolved at request time (variable in proxy_pass), so recreating its container needs no nginx restart.
     location /api/ {
+        # Both limiters apply to every request; each counts only its own routes (the other's key is empty there).
         limit_req zone=auth_writes burst=10 nodelay;
+        limit_req zone=ledger_writes burst=20 nodelay;
         error_page 429 = @rate_limited;
 
         client_max_body_size 100k;
