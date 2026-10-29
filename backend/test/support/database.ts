@@ -16,6 +16,44 @@ export function createTestPool(): Pool {
 }
 
 /**
+ * Moves a Wallet's `created_at` and `updated_at` an hour into the past, so that a change made afterwards is provably
+ * later. JavaScript dates only carry milliseconds, and two fast statements can land in the same one — a test that
+ * asserts "updatedAt moved on" without this would be flaky.
+ */
+export async function backdateWallet(pool: Pool, walletId: string): Promise<void> {
+  await pool.query(
+    `UPDATE wallets
+     SET created_at = created_at - interval '1 hour', updated_at = updated_at - interval '1 hour'
+     WHERE id = $1`,
+    [walletId],
+  );
+}
+
+/**
+ * Resolves once some statement whose text contains `statementFragment` is waiting for a lock held by another
+ * transaction, so a test can prove that a statement really started (and blocked) before it lets the lock go.
+ * Rejects after about 5 seconds if it never blocks — which is how a missing lock shows up.
+ */
+export async function waitUntilWaitingForALock(
+  pool: Pool,
+  statementFragment: string,
+): Promise<void> {
+  const attempts = 250;
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    const { rows } = await pool.query(
+      `SELECT 1 FROM pg_stat_activity
+       WHERE wait_event_type = 'Lock' AND pid <> pg_backend_pid() AND query LIKE '%' || $1 || '%'`,
+      [statementFragment],
+    );
+    if (rows.length > 0) {
+      return;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  }
+  throw new Error(`no statement containing "${statementFragment}" ever waited for a lock`);
+}
+
+/**
  * Stores one failed sign-in for `email`, `secondsAgo` seconds before the database's now(). Time is Postgres time
  * (there is no clock port), so this is how tests put an email at any point of its 15-minute window.
  */

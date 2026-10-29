@@ -1,6 +1,7 @@
 /**
  * Exact message texts shared by validation, the service and (through the contract) the Web App, the Bruno suite and the
- * Mountebank impostor (artifacts/F-2/01-requirements.md → Error message catalogue). Change all or none.
+ * Mountebank impostor (artifacts/F-2/01-requirements.md and artifacts/F-3/01-requirements.md → Error message
+ * catalogue). Change all or none.
  */
 export const LedgerMessage = {
   walletName: 'Enter a wallet name.',
@@ -17,4 +18,8 @@ export const LedgerMessage = {
   note: 'Note must be at most 200 characters.',
   today: 'today must be a valid date (YYYY-MM-DD).',
   walletNotFound: 'Wallet not found.',
+  archivedValue: 'Archived can only be set to true.',
+  nothingToChange: 'Nothing to change.',
+  alreadyArchived: 'This wallet is already archived.',
+  walletArchived: 'This wallet is archived and accepts no new transactions.',
 } as const;

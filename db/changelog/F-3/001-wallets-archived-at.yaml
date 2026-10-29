@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - changeSet:
+      id: F-3-001-add-wallets-archived-at
+      author: backend-track
+      changes:
+        # An owner archives a Wallet so it accepts no new Transactions but keeps its history (F-3, A-9: Wallets are
+        # archived, never deleted). NULL = active; a timestamp = the Postgres time the Wallet was archived.
+        # Expand-only on purpose: nullable, no default, no backfill (every existing Wallet is active), no context
+        # (the production `prod` run applies it too). An F-2 release that does not know the column keeps working on
+        # this schema — its INSERTs leave it NULL and its SELECTs never name it — which is what makes a rollback of
+        # the application image safe.
+        - addColumn:
+            tableName: wallets
+            columns:
+              - column:
+                  name: archived_at
+                  type: timestamptz
+      rollback:
+        - dropColumn:
+            tableName: wallets
+            columnName: archived_at

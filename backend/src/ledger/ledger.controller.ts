@@ -1,14 +1,15 @@
-import { Body, Controller, Get, Inject, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Param, Patch, Post } from '@nestjs/common';
 import { CurrentUser } from '../identity/identity.decorators';
 import type { SignedInUser } from '../identity/interfaces/identity-service.interface';
 import { CreateWalletDto } from './dto/create-wallet.dto';
 import type {
   TransactionResponseDto,
   WalletDetailResponseDto,
-  WalletListResponseDto,
+  WalletOverviewResponseDto,
   WalletResponseDto,
 } from './dto/ledger-response.dto';
 import { RecordTransactionDto } from './dto/record-transaction.dto';
+import { UpdateWalletDto } from './dto/update-wallet.dto';
 import type { ILedgerService } from './interfaces/ledger-service.interface';
 import { LEDGER_SERVICE } from './ledger.tokens';
 
@@ -30,9 +31,9 @@ export class LedgerController {
     return this.ledger.createWallet(current.userId, body);
   }
 
-  /** The User's Wallets, newest first. */
+  /** The Wallet Overview: the User's Wallets with their Balances, newest first, and the Currency Totals. */
   @Get()
-  listWallets(@CurrentUser() current: SignedInUser): Promise<WalletListResponseDto> {
+  listWallets(@CurrentUser() current: SignedInUser): Promise<WalletOverviewResponseDto> {
     return this.ledger.listWallets(current.userId);
   }
 
@@ -43,6 +44,16 @@ export class LedgerController {
     @Param('walletId') walletId: string,
   ): Promise<WalletDetailResponseDto> {
     return this.ledger.getWallet(current.userId, walletId);
+  }
+
+  /** Rename the Wallet and/or archive it (a 200 with the Wallet). The Currency never changes; there is no unarchive. */
+  @Patch(':walletId')
+  updateWallet(
+    @CurrentUser() current: SignedInUser,
+    @Param('walletId') walletId: string,
+    @Body() body: UpdateWalletDto,
+  ): Promise<WalletResponseDto> {
+    return this.ledger.updateWallet(current.userId, walletId, body);
   }
 
   /** Record an Income or an Expense in the Wallet (a 201). */

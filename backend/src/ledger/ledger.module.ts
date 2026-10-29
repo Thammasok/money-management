@@ -6,9 +6,10 @@ import { LedgerService } from './ledger.service';
 import { LEDGER_REPOSITORY, LEDGER_SERVICE } from './ledger.tokens';
 
 /**
- * Owns Wallets and Transactions and derives Balances. Every read and write is scoped to the Wallets the signed-in
- * User owns. Asks Exchange Rates whether a Currency is supported; never reads `users` (Identity owns them) — the
- * signed-in User arrives through the global guard and `@CurrentUser()`.
+ * Owns Wallets and Transactions, derives Balances and Currency Totals, and lets an owner rename or archive a Wallet
+ * (an Archived Wallet accepts no new Transaction). Every read and write is scoped to the Wallets the signed-in User
+ * owns. Asks Exchange Rates whether a Currency is supported; never reads `users` (Identity owns them) — the signed-in
+ * User arrives through the global guard and `@CurrentUser()`.
  */
 @Module({
   imports: [RatesModule],

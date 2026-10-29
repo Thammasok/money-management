@@ -20,3 +20,7 @@ databaseChangeLog:
   - include:
       file: F-2/002-transactions.yaml
       relativeToChangelogFile: true
+  # Wallet Overview and Management (F-3): `wallets.archived_at`. Expand-only, no seed, no context.
+  - include:
+      file: F-3/001-wallets-archived-at.yaml
+      relativeToChangelogFile: true

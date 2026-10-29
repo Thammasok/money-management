@@ -258,6 +258,9 @@ function (config) {
   // "Nothing to change." (request shape, before visibility); then 404; then 409 (archive on an Archived
   // Wallet refuses the whole request); then apply both together. absent/null = not changing.
   if (route === 'updateWallet') {
+    // A body that is not an object (a JSON array) is Nest's own 400 "object is expected": UpdateWalletDto has
+    // validation rules (all optional), so the framework refuses an array before any field is looked at.
+    if (Array.isArray(parsed)) { return error(400, ['Validation failed (object is expected)'], 'Bad Request', cookie); }
     var uMessages = [];
     var hasName = parsed.name !== undefined && parsed.name !== null;
     var hasArchived = parsed.archived !== undefined && parsed.archived !== null;

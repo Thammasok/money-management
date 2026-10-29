@@ -40,6 +40,7 @@ export function createLedgerServiceMock(): jest.Mocked<ILedgerService> {
     createWallet: jest.fn(),
     listWallets: jest.fn(),
     getWallet: jest.fn(),
+    updateWallet: jest.fn(),
     recordTransaction: jest.fn(),
   };
 }
@@ -50,6 +51,7 @@ export function createLedgerRepositoryMock(): jest.Mocked<ILedgerRepository> {
     listWalletsOwnedBy: jest.fn(),
     findOwnedWallet: jest.fn(),
     findOwnedWalletDetail: jest.fn(),
+    updateOwnedWallet: jest.fn(),
     insertTransaction: jest.fn(),
   };
 }

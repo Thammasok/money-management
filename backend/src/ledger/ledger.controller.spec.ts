@@ -1,4 +1,9 @@
-import { BadRequestException, INestApplication, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  INestApplication,
+  NotFoundException,
+} from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { createLedgerServiceMock } from '../../test/support/mocks';
@@ -7,6 +12,7 @@ import { createValidationPipe } from '../validation-pipe';
 import type {
   TransactionResponseDto,
   WalletDetailResponseDto,
+  WalletOverviewResponseDto,
   WalletResponseDto,
 } from './dto/ledger-response.dto';
 import { LedgerController } from './ledger.controller';
@@ -20,6 +26,7 @@ const aWalletResponse = (): WalletResponseDto => ({
   currency: 'THB',
   openingBalanceMinor: '100000',
   balanceMinor: '100000',
+  archivedAt: null,
   createdAt: '2026-10-29T10:00:00.123Z',
   updatedAt: '2026-10-29T10:00:00.123Z',
 });
@@ -150,20 +157,29 @@ describe('LedgerController', () => {
   });
 
   describe('GET /api/v1/wallets', () => {
-    it('answers 200 with the signed-in User’s Wallets', async () => {
+    it('answers 200 with the signed-in User’s Wallet Overview: the Wallets with their Balances and the Currency Totals (S-1)', async () => {
       // Arrange
-      ledger.listWallets.mockResolvedValue({
+      const overview: WalletOverviewResponseDto = {
         wallets: [
-          { id: WALLET_ID, name: 'Cash', currency: 'THB', createdAt: '2026-10-29T10:00:00.123Z' },
+          {
+            id: WALLET_ID,
+            name: 'Cash',
+            currency: 'THB',
+            balanceMinor: '87450',
+            archivedAt: null,
+            createdAt: '2026-10-29T10:00:00.123Z',
+          },
         ],
-      });
+        currencyTotals: [{ currency: 'THB', balanceMinor: '87450' }],
+      };
+      ledger.listWallets.mockResolvedValue(overview);
 
       // Act
       const response = await request(server()).get('/api/v1/wallets');
 
       // Assert
       expect(response.status).toBe(200);
-      expect(response.body.wallets).toHaveLength(1);
+      expect(response.body).toEqual(overview);
       expect(ledger.listWallets).toHaveBeenCalledWith('user-1');
     });
   });
@@ -205,6 +221,140 @@ describe('LedgerController', () => {
     });
   });
 
+  describe('PATCH /api/v1/wallets/:walletId', () => {
+    it('renames the Wallet of the path for the signed-in User and answers 200 — not 201 — with it (S-3)', async () => {
+      // Arrange
+      const renamed = { ...aWalletResponse(), name: 'Daily Cash' };
+      ledger.updateWallet.mockResolvedValue(renamed);
+
+      // Act
+      const response = await request(server())
+        .patch(`/api/v1/wallets/${WALLET_ID}`)
+        .send({ name: 'Daily Cash' });
+
+      // Assert
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual(renamed);
+      expect(ledger.updateWallet).toHaveBeenCalledWith('user-1', WALLET_ID, { name: 'Daily Cash' });
+    });
+
+    it('archives the Wallet and answers 200 with it (S-4)', async () => {
+      // Arrange
+      const archived = { ...aWalletResponse(), archivedAt: '2026-10-29T11:30:00.789Z' };
+      ledger.updateWallet.mockResolvedValue(archived);
+
+      // Act
+      const response = await request(server())
+        .patch(`/api/v1/wallets/${WALLET_ID}`)
+        .send({ archived: true });
+
+      // Assert
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual(archived);
+      expect(ledger.updateWallet).toHaveBeenCalledWith('user-1', WALLET_ID, { archived: true });
+    });
+
+    it('hands the business logic the trimmed name and only the declared fields — a PATCH cannot change the Currency, the money, the owner or the archived state (S-10)', async () => {
+      // Arrange
+      ledger.updateWallet.mockResolvedValue(aWalletResponse());
+
+      // Act
+      await request(server()).patch(`/api/v1/wallets/${WALLET_ID}`).send({
+        name: '  Bank Savings  ',
+        currency: 'USD',
+        openingBalanceMinor: '1',
+        balanceMinor: '9',
+        archivedAt: '2020-01-01T00:00:00.000Z',
+        id: 'smuggled',
+        userId: 'smuggled',
+      });
+
+      // Assert
+      expect(ledger.updateWallet).toHaveBeenCalledWith('user-1', WALLET_ID, {
+        name: 'Bank Savings',
+      });
+    });
+
+    it('answers 400 with every message and never reaches the business logic when the body breaks the rules (S-11, S-13)', async () => {
+      // Arrange
+      const invalid = { name: '', archived: false };
+
+      // Act
+      const response = await request(server()).patch(`/api/v1/wallets/${WALLET_ID}`).send(invalid);
+
+      // Assert
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        statusCode: 400,
+        message: ['Enter a wallet name.', 'Archived can only be set to true.'],
+        error: 'Bad Request',
+      });
+      expect(ledger.updateWallet).not.toHaveBeenCalled();
+    });
+
+    it('hands a body that changes nothing on as it is — "Nothing to change." is the business logic’s answer, not the pipe’s', async () => {
+      // Arrange
+      ledger.updateWallet.mockRejectedValue(
+        new BadRequestException({
+          statusCode: 400,
+          message: ['Nothing to change.'],
+          error: 'Bad Request',
+        }),
+      );
+
+      // Act
+      const response = await request(server()).patch(`/api/v1/wallets/${WALLET_ID}`).send({});
+
+      // Assert
+      expect(ledger.updateWallet).toHaveBeenCalledWith('user-1', WALLET_ID, {});
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        statusCode: 400,
+        message: ['Nothing to change.'],
+        error: 'Bad Request',
+      });
+    });
+
+    it('passes an id that is not a UUID on as it is — the business logic answers 404, never the pipe with a 400 (S-14)', async () => {
+      // Arrange
+      ledger.updateWallet.mockRejectedValue(new NotFoundException('Wallet not found.'));
+
+      // Act
+      const response = await request(server())
+        .patch('/api/v1/wallets/not-a-uuid')
+        .send({ name: 'Cash' });
+
+      // Assert
+      expect(response.status).toBe(404);
+      expect(response.body).toEqual({
+        statusCode: 404,
+        message: 'Wallet not found.',
+        error: 'Not Found',
+      });
+      expect(ledger.updateWallet).toHaveBeenCalledWith('user-1', 'not-a-uuid', { name: 'Cash' });
+    });
+
+    it('answers what the business logic throws: the 409 for an already Archived Wallet passes through unchanged (S-13)', async () => {
+      // Arrange
+      ledger.updateWallet.mockRejectedValue(
+        new ConflictException('This wallet is already archived.'),
+      );
+
+      // Act
+      const response = await request(server())
+        .patch(`/api/v1/wallets/${WALLET_ID}`)
+        .send({ archived: true });
+
+      // Assert
+      expect(response.status).toBe(409);
+      expect(response.body).toEqual({
+        statusCode: 409,
+        message: 'This wallet is already archived.',
+        error: 'Conflict',
+      });
+    });
+  });
+
   describe('POST /api/v1/wallets/:walletId/transactions', () => {
     const body = {
       kind: 'expense',
@@ -213,6 +363,26 @@ describe('LedgerController', () => {
       note: 'Lunch',
       today: '2026-10-29',
     };
+
+    it('answers what the business logic throws: the 409 for an Archived Wallet passes through unchanged (S-12)', async () => {
+      // Arrange
+      ledger.recordTransaction.mockRejectedValue(
+        new ConflictException('This wallet is archived and accepts no new transactions.'),
+      );
+
+      // Act
+      const response = await request(server())
+        .post(`/api/v1/wallets/${WALLET_ID}/transactions`)
+        .send(body);
+
+      // Assert
+      expect(response.status).toBe(409);
+      expect(response.body).toEqual({
+        statusCode: 409,
+        message: 'This wallet is archived and accepts no new transactions.',
+        error: 'Conflict',
+      });
+    });
 
     it('records the Transaction in the Wallet of the path for the signed-in User and answers 201 (S-1)', async () => {
       // Arrange
